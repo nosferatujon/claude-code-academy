@@ -156,21 +156,21 @@ Turn 1: Task call A → wait → Turn 2: Task call B → sequential ✗
 ```
 
 ```mermaid
-flowchart LR
+flowchart TD
     subgraph par ["✓ Parallel — all Task calls in one response turn"]
-        direction TB
-        Cp["Coordinator"] -->|"one turn"| T1["Task A"]
-        Cp -->|"one turn"| T2["Task B"]
-        Cp -->|"one turn"| T3["Task C"]
+        Cp["Coordinator"] -->|"single turn"| T1["Task A"]
+        Cp -->|"single turn"| T2["Task B"]
+        Cp -->|"single turn"| T3["Task C"]
     end
     subgraph seq ["✗ Sequential — one Task call per turn"]
-        direction TB
         Cs["Coordinator"] -->|"turn 1"| T4["Task A"]
         T4 -.->|"wait"| Cs
         Cs -->|"turn 2"| T5["Task B"]
         T5 -.->|"wait"| Cs
         Cs -->|"turn 3"| T6["Task C"]
     end
+    style par fill:#0f1d14,stroke:#5bbf7a
+    style seq fill:#1d0f0f,stroke:#e06c6c
 ```
 
 ## Task decomposition strategies

@@ -155,9 +155,9 @@ flowchart TD
     Doc["Source document"] --> Ex["Claude extracts data"]
     Ex --> Val{"Passes validation?"}
     Val -->|"Yes"| Done(["Use the result ✓"])
-    Val -->|"No — format error\ne.g. date as June 3rd not 2024-06-03"| Retry["Retry: resend original doc\n+ specific error feedback"]
+    Val -->|"No — format error"| Retry["Retry: resend original doc\n+ specific error feedback\ne.g. wrong date format"]
     Retry --> Ex
-    Val -->|"No — field absent\nfrom source document"| Abort(["Stop. Do not retry.\nRetrying will fabricate data."])
+    Val -->|"No — data absent"| Abort(["Stop. Do not retry.\nRetrying will fabricate data."])
     style Done fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
     style Abort fill:#2a1818,stroke:#e06c6c,color:#e6e8ee
     style Retry fill:#2a2818,stroke:#d9a441,color:#e6e8ee

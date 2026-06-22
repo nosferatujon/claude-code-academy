@@ -58,14 +58,11 @@ This has concrete implications for how you structure inputs:
 ```mermaid
 flowchart LR
     subgraph doc ["Long input to Claude — where attention falls"]
-        direction LR
-        B["Beginning\n✓ Reliably read"] --- G1["  ···  "] --- Mid["Middle\n⚠ Often missed"] --- G2["  ···  "] --- E["End\n✓ Reliably read"]
+        B["Beginning\n✓ Reliably read"] --> Mid["Middle\n⚠ Often missed"] --> E["End\n✓ Reliably read"]
     end
     style B fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
     style E fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
     style Mid fill:#2a2818,stroke:#d9a441,color:#e6e8ee
-    style G1 fill:#171a23,stroke:#171a23,color:#171a23
-    style G2 fill:#171a23,stroke:#171a23,color:#171a23
 ```
 
 **In multi-agent pipelines:** If a subagent returns a long result, the orchestrator is most likely to notice what's at the start and end of that result. Structure subagent outputs so the most important finding is always first.
