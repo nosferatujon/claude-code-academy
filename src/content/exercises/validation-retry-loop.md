@@ -3,7 +3,7 @@ title: Build a validation-retry loop
 domain: prompting
 difficulty: advanced
 estMinutes: 25
-order: 3
+order: 4
 intro: Implement a retry loop that catches extraction failures, sends specific feedback back to the model, and learns when retrying is pointless because the information simply isn't there.
 steps:
   - "Write an extraction prompt for invoice data: `vendor`, `amount`, `due_date`, `invoice_number` — all required."

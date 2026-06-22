@@ -3,7 +3,7 @@ title: Create path-scoped rules in .claude/rules/
 domain: workflows
 difficulty: intermediate
 estMinutes: 20
-order: 4
+order: 3
 intro: Write rules that only load for specific file globs, keeping context lean while still enforcing the right conventions for every file type.
 steps:
   - "Create the directory `.claude/rules/` in your project if it doesn't exist."

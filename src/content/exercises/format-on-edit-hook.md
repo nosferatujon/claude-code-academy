@@ -3,7 +3,7 @@ title: Auto-format with a PostToolUse hook
 domain: workflows
 difficulty: advanced
 estMinutes: 20
-order: 3
+order: 4
 intro: Use a hook to run a formatter automatically every time Claude Code edits a file — enforced by the harness, not the model.
 steps:
   - "Open (or create) `.claude/settings.json` in your project."

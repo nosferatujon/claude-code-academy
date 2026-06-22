@@ -3,7 +3,7 @@ title: Control tool selection with tool_choice
 domain: mcp
 difficulty: intermediate
 estMinutes: 20
-order: 3
+order: 2
 intro: Observe the difference between auto, any, and forced tool_choice — then use forced selection to guarantee a specific tool runs first in an agentic workflow.
 steps:
   - "Set up two tools in a test script: `search_docs` (searches documentation) and `get_current_date` (returns today's date)."
