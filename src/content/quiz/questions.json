@@ -213,15 +213,15 @@
     "id": "mcp-primitives",
     "domain": "mcp",
     "difficulty": "intermediate",
-    "question": "You are designing an MCP server for an internal knowledge base. You need three capabilities: (1) full-text search that Claude triggers when answering a user question, (2) a topic catalogue that should automatically be in Claude's context without requiring a search call, and (3) a '/explain-topic' command users can invoke directly from Claude Code. Which combination of MCP primitives correctly maps to these three needs?",
+    "question": "Your internal knowledge base MCP server exposes three capabilities, all implemented as tools: search_knowledge, get_catalogue, and explain_topic. In production you observe two problems: (1) Claude automatically calls get_catalogue at the start of every session before any user message, burning 2-3 unnecessary tool calls per session, and (2) users cannot invoke /explain_topic as a slash command — they have to explicitly ask Claude to run it. search_knowledge works correctly. Your MCP architect says two of the three should be reimplemented as different primitives. Which two and what should they become?",
     "options": [
-      "All three as tools — tools are the most flexible primitive and can serve all purposes",
-      "Tool for (1), resource for (2), prompt for (3) — each primitive is designed for its respective interaction pattern",
-      "Tool for (1) and (3), resource for (2) — prompts are optional and tools can substitute for them",
-      "Resource for all three — resources are the most efficient way to surface information to Claude"
+      "search_knowledge should become a resource (stable reference data) and get_catalogue should become a prompt (user-invokable)",
+      "get_catalogue should become a resource — server-published data the application loads directly without tool calls, eliminating the per-session overhead. explain_topic should become a prompt — a user-invokable template surfaced as a slash command. search_knowledge correctly stays a tool because Claude triggers it on demand during reasoning.",
+      "explain_topic should become a resource and get_catalogue should become a prompt — resources handle structured workflows and prompts handle reference data",
+      "All three should remain tools but get_catalogue should be pre-called in the system prompt so Claude doesn't need to call it again"
     ],
     "answer": 1,
-    "explanation": "Each primitive is designed for a specific interaction pattern. Search triggered by Claude's reasoning → tool (model-controlled action). Topic catalogue that should always be in context → resource (server-published read-only data loaded by the application). User-invokable workflow surfaced as a slash command → prompt (reusable template for users). Forcing all three into tools works but loses the semantic and efficiency benefits of the right primitive for each."
+    "explanation": "The two problems map directly to wrong primitive choices. get_catalogue's data doesn't change based on Claude's actions — it should be a resource, which the application loads at session start without any model-initiated tool call. explain_topic is a user-initiated workflow that should surface as a slash command — that's a prompt. search_knowledge is correctly a tool: it's triggered by the model during its reasoning process in response to a user question. Using tools for all three loses the efficiency and interaction benefits each primitive is designed to provide."
   },
   {
     "id": "mcp-transports",
@@ -563,57 +563,57 @@
     "id": "agentic-least-privilege",
     "domain": "agentic",
     "difficulty": "intermediate",
-    "question": "An agent needs to read customer records from a database to generate a monthly report. What is the principle of least privilege applied to this tool?",
+    "question": "Your monthly reporting agent was provisioned with full database admin credentials for convenience. During a routine run it hit an unexpected schema error and — following its error recovery logic — attempted to drop and recreate what it thought was a corrupted index. It dropped the wrong table, causing a 4-hour outage and data loss requiring backup restoration. The reporting task only needed to read two tables. What design principle, applied upfront, would have made this incident impossible?",
     "options": [
-      "Give the agent full read/write database access so it can handle any future requirements",
-      "Give the agent read-only access to only the customer records table needed for the report",
-      "Give the agent admin credentials with access revocation after each session",
-      "Use no database tool and have the agent request data via human messages instead"
+      "Sandboxing — running the agent in a container would have isolated it from the production database",
+      "Least privilege — provisioning only read-only access to the two required tables. Admin credentials gave the agent destructive capabilities that were irrelevant to its task; any error in its reasoning became a potential production incident.",
+      "Human-in-the-loop — requiring human approval before any database write would have caught the drop attempt",
+      "Better error handling — the agent should have raised an exception and stopped rather than attempting self-repair"
     ],
     "answer": 1,
-    "explanation": "Least privilege means granting the minimum access required for the task — read-only access to the specific table needed. Full access (A) creates unnecessary risk. Admin credentials (C) are excessive. Routing through humans (D) defeats automation."
+    "explanation": "Least privilege means granting exactly the access the task requires — no more. A reporting agent needs read access to specific tables; admin credentials turned a recoverable reasoning error into a destructive irreversible action. Sandboxing (A) and human-in-the-loop (C) are complementary controls but don't address that the agent had no business having DROP TABLE capability in the first place. Better error handling (D) is also correct but doesn't prevent the capability from existing."
   },
   {
     "id": "agentic-parallel-subagents",
     "domain": "agentic",
     "difficulty": "intermediate",
-    "question": "A research task requires gathering data from four independent sources. Which execution strategy completes the task fastest?",
+    "question": "Your competitive analysis pipeline runs four research subagents sequentially — Company A financials, then Company B financials, then market analysis, then regulatory landscape — and takes 44 minutes total. Each individual subagent runs in 10-12 minutes. Your manager points out that 44 minutes is far longer than any individual task and asks what is wrong with the pipeline. What is the bottleneck and what is the fix?",
     "options": [
-      "Sequential: spawn one subagent per source, wait for each to finish before starting the next",
-      "Parallel: spawn all four subagents simultaneously and aggregate results when all complete",
-      "Single agent: have one agent query all four sources in sequence within the same session",
-      "Random: spawn subagents in random order to avoid rate limiting"
+      "Each subagent is hitting API rate limits and backing off — add jitter to the retry logic so they don't all retry at the same moment",
+      "The sequential design forces each subagent to wait for the previous one to finish before starting, even though none of the four tasks depend on each other's output. Spawning all four simultaneously reduces total runtime to approximately the longest single subagent (~12 minutes).",
+      "The orchestrator is spending 2-3 minutes per subagent on context serialisation — reduce the amount of background context passed to each subagent",
+      "44 minutes is expected — orchestration coordination overhead grows linearly with each additional subagent in any multi-agent pipeline"
     ],
     "answer": 1,
-    "explanation": "When subtasks are independent and do not depend on each other's results, parallel execution dramatically reduces total time. The four source queries have no dependencies, making this an ideal case for concurrent subagent spawning."
+    "explanation": "Sequential execution means total time = sum of all subagent runtimes (10+11+12+11 ≈ 44 min). Since no subagent's task depends on another's results, there is no reason to run them in sequence. Parallel execution means total time ≈ the slowest single subagent (~12 min). This is the core tradeoff in agentic design: when subtasks are independent, parallel spawning is strictly faster."
   },
   {
     "id": "agentic-pipeline-vs-reactive",
     "domain": "agentic",
     "difficulty": "intermediate",
-    "question": "Which scenario best fits a pipeline (sequential steps) workflow rather than a reactive (event-driven) agent?",
+    "question": "Your team is designing two systems. System A processes employee expense submissions: every submission goes through compliance check → receipt validation → manager routing → approval notification, in that exact order, for every submission without exception. System B monitors a fraud alert queue: when an alert fires, it must decide whether to freeze the account, request documentation, or escalate to a human analyst based on the alert details. Your architect recommends a fixed pipeline for A and a reactive agent for B. A teammate argues both should use the same pattern for consistency. Who is right and why?",
     "options": [
-      "A customer support bot that responds to unpredictable user inquiries",
-      "A document processing system that always extracts, then validates, then formats every submitted document",
-      "A monitoring agent that wakes up only when an anomaly alert fires",
-      "A coding assistant that dynamically decides which files to read based on the developer's question"
+      "The teammate — a reactive agent handles both patterns; pipelines are just reactive agents with a fixed execution order configured upfront",
+      "The architect — System A's steps are identical for every submission and known at design time, making a fixed pipeline the right fit. System B must evaluate each alert and decide dynamically which path to take, requiring a reactive agent that reasons about each situation. Forcing A into a reactive design adds unnecessary complexity; forcing B into a fixed pipeline can't represent its branching logic.",
+      "The architect for System A only — System B's decision logic is simple enough to encode as pipeline branches with conditional steps",
+      "The teammate — consistency across both systems reduces operational overhead and reactive agents handle predictable pipelines efficiently"
     ],
     "answer": 1,
-    "explanation": "Pipelines are appropriate when the sequence of operations is known and fixed. Document processing with defined stages (extract → validate → format) is inherently sequential and predictable. The other options involve dynamic, event-driven, or exploratory behaviour better suited to reactive agents."
+    "explanation": "The architectural choice follows the nature of the problem. System A has a fixed, predictable sequence that every submission follows — a pipeline is simpler, auditable, and easier to monitor. System B's correct action is unknowable until the agent reads and evaluates each specific alert — that's reactive agent territory. Using the same pattern for both would either add reactive overhead to a simple pipeline or straitjacket a dynamic decision into a rigid sequence."
   },
   {
     "id": "agentic-irreversible-actions",
     "domain": "agentic",
     "difficulty": "intermediate",
-    "question": "Before executing a database migration that will delete 10,000 records, what should a well-designed agent do?",
+    "question": "Your database maintenance agent is instructed to 'clean up expired session records.' During a scheduled run it identifies 12,000 records older than 90 days and deletes them immediately without pausing. The records were flagged internally for a pending security audit — a fact stored in a separate audit_flags table the agent never checked. Restoring the records from backup takes 8 hours and delays the audit. What is the root design failure?",
     "options": [
-      "Execute immediately to minimise the time the system is in a transitional state",
-      "Pause and require explicit human confirmation before performing the irreversible action",
-      "Create a backup, then proceed automatically without interruption",
-      "Check if the records are referenced elsewhere, then delete them without confirmation if no references are found"
+      "The agent should have joined against audit_flags before deleting — better pre-deletion validation would have caught the flagged records",
+      "The agent proceeded autonomously with an irreversible bulk deletion without surfacing the planned action for human review. At the scale of 12,000 records, the cost of a wrong deletion far exceeds the cost of a confirmation step — pausing to show the planned action and require approval is the correct design for any irreversible, high-impact operation.",
+      "The agent should have created a backup of the deleted records first — reversibility through backup is the correct safeguard for bulk operations",
+      "Scheduled maintenance tasks should always run in a read-only dry-run mode first, generating a deletion report before executing"
     ],
     "answer": 1,
-    "explanation": "Irreversible, high-impact actions should require explicit human approval before execution. This is a core principle of safe agentic design: prefer reversible actions, and when a destructive action is unavoidable, surface it to a human rather than proceeding autonomously."
+    "explanation": "The validation gap (not checking audit_flags) is a symptom, not the root cause — there will always be context the agent doesn't have. The root failure is proceeding autonomously with an irreversible action at scale. A well-designed agent surfaces high-impact, irreversible planned actions for human confirmation before executing. A backup (C) and a dry-run (D) are useful complementary safeguards but don't address that the agent made an autonomous decision it had no business making unilaterally."
   },
   {
     "id": "agentic-human-review-sampling",
@@ -787,15 +787,15 @@
     "id": "mcp-iserror-flag",
     "domain": "mcp",
     "difficulty": "intermediate",
-    "question": "An MCP tool call fails because the requested record does not exist. The server returns a result with `isError: true` and a descriptive message. How should the client agent treat this response?",
+    "question": "Your order support agent calls get_order('ORD-4821') and receives {\"isError\": true, \"message\": \"Order ORD-4821 not found\"}. The customer insists the order exists and reads the number aloud again. Meanwhile, logs show your agent immediately terminated the session with 'System error — please contact support.' The customer calls back frustrated. What should the agent have done instead?",
     "options": [
-      "Treat it as a successful response and pass it to the next step",
-      "Crash the agent immediately to prevent further damage",
-      "Recognise it as a tool-level error and decide whether to retry, use an alternative tool, or surface the error to the user",
-      "Discard the result silently and continue without mentioning the failure"
+      "Retried get_order with the same ID up to 3 times with exponential backoff before giving up",
+      "Treated isError: true as a fatal signal and terminated the session — this prevents the agent from operating on bad state",
+      "Recognised isError: true as a structured tool-level signal that the record wasn't found — not a system crash. The agent should have asked the customer to verify the order number, tried an alternative lookup (by email or phone), or clearly explained the issue so the customer could take action.",
+      "Logged the error silently and told the customer the order is being processed to avoid confusion"
     ],
     "answer": 2,
-    "explanation": "isError: true is a structured signal that the tool completed the call but encountered an error. The agent should handle it intelligently — not treat it as success (A), not crash (B), and not silently ignore it (D). Structured errors enable graceful recovery."
+    "explanation": "isError: true means the tool call completed — the server processed the request and reported a domain error (record not found), not an infrastructure failure. The agent should treat this as meaningful information and respond intelligently: verify the input, try an alternative path, or surface a clear explanation. Terminating the session (B) treats a recoverable domain error as a fatal crash. Silent retry (A) re-sends the same bad input. Hiding the error (D) leaves the customer without actionable information."
   },
   {
     "id": "mcp-error-categories",
@@ -1095,15 +1095,15 @@
     "id": "prompting-iterative-interview",
     "domain": "prompting",
     "difficulty": "intermediate",
-    "question": "You're using Claude to generate a complex technical specification, but early drafts miss key requirements. Which iterative pattern is most effective for gathering the right requirements before writing?",
+    "question": "You ask Claude to write a technical spec for a new payment API. The draft looks polished and comprehensive. You share it with the team and spend 90 minutes in a review meeting, only to find it missed PCI-DSS compliance requirements entirely, assumed REST when the team had already decided on GraphQL, and designed for synchronous calls when the system needs async webhooks. All three gaps stem from prior decisions Claude didn't know about. What approach would have surfaced these before a full draft was written?",
     "options": [
-      "Provide all requirements in one massive upfront prompt and iterate on the output",
-      "Use an interview pattern: ask Claude to pose clarifying questions before drafting, then answer them before generating the spec",
-      "Start generating and correct errors manually after each paragraph",
-      "Provide a single vague prompt and rely on Claude to infer the requirements from context"
+      "Provide a longer, more detailed initial prompt covering every requirement you can think of before asking Claude to draft",
+      "Before any drafting, ask Claude to generate clarifying questions about constraints, standards, prior architectural decisions, and integration requirements — then answer them. PCI-DSS, GraphQL, and async webhooks are all prior decisions that a clarification pass would have surfaced in minutes rather than discovered in a 90-minute review.",
+      "Write the spec section by section, reviewing each with the team before Claude moves to the next",
+      "Ask Claude to include an 'Assumptions' section at the top so reviewers can catch wrong assumptions before reading the full spec"
     ],
     "answer": 1,
-    "explanation": "The interview pattern front-loads ambiguity resolution. By having Claude ask clarifying questions first, you surface requirement gaps before any generation happens, leading to a spec that fits your actual needs without multiple costly revision cycles."
+    "explanation": "The 90-minute review cost came from Claude generating against unknown constraints. Clarifying questions front-load ambiguity resolution — Claude asks about standards, prior decisions, and architectural constraints before writing anything. All three gaps (PCI-DSS, GraphQL, async) are exactly the kind of prior-decision context that a structured clarification pass surfaces immediately. A longer initial prompt (A) helps only if you already know what to include. Section-by-section review (C) delays discovery until after writing begins. An Assumptions section (D) is useful but still requires the team to catch wrong assumptions reactively."
   },
   {
     "id": "prompting-test-driven-iteration",
@@ -1151,15 +1151,15 @@
     "id": "prompting-nullable-fields",
     "domain": "prompting",
     "difficulty": "advanced",
-    "question": "When defining a JSON schema for structured extraction, which field design practice best prevents the model from hallucinating values for missing data?",
+    "question": "Your invoice extraction pipeline defines 8 fields in the JSON schema, all marked required. In production, the `due_date` and `purchase_order` fields are frequently absent from invoices, but your validator keeps receiving fabricated values — realistic-looking dates like '2024-12-31' and PO numbers like 'PO-00001' for invoices that contain neither. Downstream systems are processing these hallucinated values as real. What schema design change addresses the root cause?",
     "options": [
-      "Mark all fields as required so the model always provides a value",
-      "Use nullable fields (allowing null values) so the model can explicitly return null when data is absent rather than fabricating a value",
-      "Omit optional fields from the schema so the model skips them automatically",
-      "Add a string field named 'confidence' so the model flags uncertain extractions"
+      "Add a system prompt instruction: 'If a field is not present in the document, output the string N/A as a placeholder'",
+      "Change due_date and purchase_order from required to nullable — the model can then explicitly return null when the data is absent, rather than fabricating a plausible value to satisfy a required constraint",
+      "Remove due_date and purchase_order from the schema entirely so the model never attempts to extract them",
+      "Add a boolean field is_present for each optional field so the model separately signals whether it found the value"
     ],
     "answer": 1,
-    "explanation": "Nullable fields give the model a legitimate way to express 'this data is absent,' which is preferable to the model fabricating a plausible-sounding value. Required non-nullable fields (A) create pressure to hallucinate. Omitting fields (C) prevents structured capture entirely."
+    "explanation": "Required non-nullable fields create pressure to hallucinate — the model must provide something, so it invents a plausible value. Nullable fields give the model a legitimate way to express 'this field is absent', which is what you actually want. System prompt instructions (A) are probabilistic. Removing fields (C) prevents capturing them when they do appear. A separate is_present flag (D) still leaves the value field required and doesn't solve the root problem."
   },
   {
     "id": "prompting-validation-retry",
@@ -1207,29 +1207,29 @@
     "id": "prompting-interview-clarification",
     "domain": "prompting",
     "difficulty": "beginner",
-    "question": "A developer asks Claude to 'improve the performance of this function' without providing any other context. What is the ideal Claude behaviour before making changes?",
+    "question": "A developer asks Claude to 'make this function faster.' Claude immediately rewrites it using async operations, cutting response time from 200ms to 80ms. The developer rejects it — the function runs in a synchronous context and the async rewrite broke three calling sites. On the second attempt Claude adds aggressive caching, but the function handles financial transactions and caching had been ruled out for compliance reasons — something Claude never asked about. Both attempts failed for reasons Claude could have learned upfront. What should Claude have done before making any changes?",
     "options": [
-      "Make the most common performance optimisations immediately to save time",
-      "Ask clarifying questions: What performance metric matters? What are the constraints? Is correctness more important than speed?",
-      "Refuse the task until a complete requirements document is provided",
-      "Add logging to measure current performance, then optimise based on the measurements"
+      "Profiled the function first using logging to identify the actual bottleneck before proposing any approach",
+      "Asked clarifying questions before writing any code: What does 'faster' mean here — latency, throughput, or memory? Are there constraints like sync-only execution or caching restrictions? Both failed optimisations would have been ruled out immediately.",
+      "Presented all three optimisation approaches (async, caching, algorithmic) as options and let the developer choose",
+      "Requested the full codebase so it could see all calling sites before deciding on an approach"
     ],
     "answer": 1,
-    "explanation": "Ambiguous tasks should trigger clarifying questions before action. 'Improve performance' could mean latency, throughput, memory, or readability — and tradeoffs differ. Asking first prevents wasted effort on the wrong optimisation."
+    "explanation": "Both failed attempts had the same root cause: Claude acted on an ambiguous instruction without surfacing constraints that were already known to the developer. Async rewrites and caching were both ruled out by constraints Claude never asked about. Clarifying questions before any code is written are the targeted fix — they take 30 seconds and would have eliminated both failed attempts. Profiling (A) addresses the wrong problem (identifying bottlenecks, not constraints). Presenting options (C) still requires knowing what's valid. Full codebase (D) shows calling sites but not compliance rules."
   },
   {
     "id": "prompting-chain-of-thought",
     "domain": "prompting",
     "difficulty": "intermediate",
-    "question": "When is asking Claude to 'think step by step' most beneficial?",
+    "question": "You add 'think step by step' to two pipelines. Pipeline A classifies customer emails into one of five fixed support categories. Pipeline B analyses contract clauses to detect obligations that conflict with each other across different sections. After a month, Pipeline A's token cost increased 40% with no measurable accuracy improvement, while Pipeline B catches significantly more conflicts than before. A teammate asks why the same technique produced such different results. What is the explanation?",
     "options": [
-      "For simple lookup tasks where the answer is a single known fact",
-      "For multi-step reasoning tasks where intermediate steps are needed to reach the correct conclusion",
-      "Only for maths problems — it has no effect on other task types",
-      "When you want shorter, more concise responses"
+      "Pipeline A's categories are too broad — step-by-step reasoning always improves accuracy when the taxonomy is refined",
+      "Chain-of-thought helps when intermediate reasoning steps are needed to reach the correct answer. Email classification is a pattern-match against a known taxonomy — no intermediate steps are required. Conflict detection requires holding multiple clauses in mind and reasoning about their interactions — exactly the multi-step reasoning where chain-of-thought adds value.",
+      "Step-by-step reasoning improves recall tasks but not classification tasks, regardless of complexity",
+      "The 40% token increase in Pipeline A caused the model to truncate its reasoning before completing it, explaining the lack of improvement"
     ],
     "answer": 1,
-    "explanation": "Chain-of-thought prompting helps most on tasks requiring multi-step reasoning — complex analysis, logic puzzles, planning, or inference chains. For simple factual lookups, it adds tokens without improving accuracy. It generally produces longer responses, not shorter ones."
+    "explanation": "Chain-of-thought prompting benefits tasks where the correct answer depends on intermediate reasoning steps. Email classification is a single-step pattern match — the model already knows the categories and assigning an email to one doesn't benefit from explicit step-by-step reasoning. Conflict detection requires actively tracing how one clause's obligations interact with others across the document — intermediate steps are the mechanism for doing this correctly. Adding chain-of-thought where it isn't needed just adds tokens without helping."
   },
   {
     "id": "prompting-role-persona",
