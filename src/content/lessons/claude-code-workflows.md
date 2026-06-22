@@ -62,6 +62,18 @@ This lets you split a large CLAUDE.md into topic-specific files without bloating
 ### `.claude/rules/` directory
 An alternative to a monolithic CLAUDE.md is the `.claude/rules/` directory — topic-specific files like `testing.md`, `api-conventions.md`, `database.md`. Each file is focused on one area, making it easier to maintain and update individual sections.
 
+```mermaid
+graph TD
+    subgraph user ["~/.claude/CLAUDE.md  ·  User level\nPersonal · never committed · applies to every project you open"]
+        subgraph project ["CLAUDE.md (project root)  ·  Project level\nCommitted to git · shared with the whole team"]
+            subgraph dir ["src/auth/CLAUDE.md  ·  Directory level\nAuto-loaded when Claude works in that folder"]
+                W(["All three files load when you work here"])
+            end
+        end
+    end
+    style W fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+```
+
 ### Diagnosing inconsistent behavior
 Use the `/memory` command to see exactly which memory files are currently loaded. If Claude is ignoring a rule you wrote, `/memory` will show you whether the file is actually being picked up.
 
@@ -198,6 +210,23 @@ Hooks are shell commands that run automatically at key moments in Claude Code's 
 | `PostToolUse` | After a tool call completes |
 | `UserPromptSubmit` | When you press enter on a message |
 | `Stop` | When Claude finishes responding |
+
+```mermaid
+sequenceDiagram
+    participant U as You
+    participant H as Harness (hooks)
+    participant C as Claude
+    participant T as Tool
+
+    U->>H: Send message
+    H-->>C: UserPromptSubmit hook fires, then delivers message
+    C->>H: Requests a tool call
+    H-->>T: PreToolUse hook fires, then executes tool
+    T-->>H: Tool result returned
+    H-->>C: PostToolUse hook fires, then delivers result
+    C-->>H: Finishes responding
+    H-->>U: Stop hook fires, response shown to you
+```
 
 **Practical examples:**
 - `PostToolUse` on Edit → auto-run `prettier` to format the file

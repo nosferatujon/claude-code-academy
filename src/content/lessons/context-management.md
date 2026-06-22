@@ -55,6 +55,19 @@ This has concrete implications for how you structure inputs:
 - **Use explicit section headers** throughout long content to create landmarks. Headers help Claude navigate long inputs and find relevant sections.
 - **Organize with position in mind**: if a finding matters, don't bury it in the middle of a long document. Move it to the top or summarize it there.
 
+```mermaid
+flowchart LR
+    subgraph doc ["Long input to Claude — where attention falls"]
+        direction LR
+        B["Beginning\n✓ Reliably read"] --- G1["  ···  "] --- Mid["Middle\n⚠ Often missed"] --- G2["  ···  "] --- E["End\n✓ Reliably read"]
+    end
+    style B fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+    style E fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+    style Mid fill:#2a2818,stroke:#d9a441,color:#e6e8ee
+    style G1 fill:#171a23,stroke:#171a23,color:#171a23
+    style G2 fill:#171a23,stroke:#171a23,color:#171a23
+```
+
 **In multi-agent pipelines:** If a subagent returns a long result, the orchestrator is most likely to notice what's at the start and end of that result. Structure subagent outputs so the most important finding is always first.
 
 ## Verbose tool output trimming
@@ -111,6 +124,14 @@ When an orchestrator delegates a sub-task to a worker agent, the handoff design 
 **Why this matters:** If a worker returns its full transcript, the orchestrator's context fills with irrelevant details from the sub-task. Multiply this across several workers and you've wasted most of your context budget on noise.
 
 **Define a clear contract:** worker receives X, worker returns Y. Treat it like an API.
+
+```mermaid
+flowchart LR
+    O["Orchestrator"] -->|"Task + only needed context\n+ expected output format"| W["Worker Agent"]
+    W -->|"Structured result only\nNOT the full transcript"| O
+    style O fill:#3a2a24,stroke:#d97757
+    style W fill:#252a38,stroke:#3a4058
+```
 
 **Example of a clean handoff:**
 - Orchestrator sends: "Analyze `src/auth/` for security vulnerabilities. Return a JSON array of findings with `file`, `line`, and `description` fields."

@@ -34,6 +34,18 @@ Every agent — including Claude Code — runs the same core cycle:
 
 This loop continues automatically. You don't direct each step.
 
+```mermaid
+flowchart TD
+    A(["You send a task"]) --> B["1 · Gather context\nread task, files, prior results"]
+    B --> C{"2 · Decide\nwhat next?"}
+    C -->|"Call a tool"| D["3 · Act\nexecute the tool"]
+    D --> E["4 · Observe\nadd result to context"]
+    E --> C
+    C -->|"Task complete"| F(["Present final answer"])
+    style A fill:#252a38,stroke:#3a4058
+    style F fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+```
+
 ## stop_reason mechanics
 
 This is one of the most heavily tested topics on the exam. The agentic loop in the Claude Agent SDK doesn't guess when to stop — it inspects the `stop_reason` field on every API response and uses that to decide what to do next.
@@ -62,6 +74,17 @@ while true:
 - **Parsing natural language signals** — don't scan the assistant's text for phrases like "I'm done" or "task complete" to decide when to stop. The model may say that mid-task. Use `stop_reason`.
 - **Arbitrary iteration caps as the primary stop condition** — a hard limit like "stop after 10 turns" is a safety net, not the main termination logic. The primary stop is always `stop_reason == "end_turn"`.
 - **Checking for assistant text content as a completion indicator** — the presence or absence of text in the response is not a reliable signal. Always use `stop_reason`.
+
+```mermaid
+flowchart TD
+    A["Call Claude API"] --> B{"stop_reason?"}
+    B -->|"tool_use"| C["Execute the tool"]
+    C --> D["Append result to messages"]
+    D --> A
+    B -->|"end_turn"| E(["Show response to user\n— DONE"])
+    style B fill:#3a2a24,stroke:#d97757
+    style E fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+```
 
 ## Single-agent vs. multi-agent
 
@@ -100,6 +123,17 @@ Orchestrator — Worker B
 - With 3 workers, you have 3 communication paths (each worker ↔ hub) instead of 6 (every worker ↔ every other worker). Simpler to reason about and debug.
 - If a worker fails, the orchestrator handles it — workers don't need to know about each other.
 
+```mermaid
+flowchart TD
+    O["Orchestrator\n(hub)"] -->|"sub-task A"| WA["Worker A"]
+    O -->|"sub-task B"| WB["Worker B"]
+    O -->|"sub-task C"| WC["Worker C"]
+    WA -->|"result A"| O
+    WB -->|"result B"| O
+    WC -->|"result C"| O
+    style O fill:#3a2a24,stroke:#d97757
+```
+
 **Real example:** An orchestrator is asked to audit a codebase for security issues. It spawns one worker per directory, each scanning independently. Workers return findings; the orchestrator merges and ranks them.
 
 ## The Task tool and subagent spawning
@@ -119,6 +153,24 @@ A few things the exam tests closely:
 ```
 Single response with 3 Task calls → 3 subagents run in parallel ✓
 Turn 1: Task call A → wait → Turn 2: Task call B → sequential ✗
+```
+
+```mermaid
+flowchart LR
+    subgraph par ["✓ Parallel — all Task calls in one response turn"]
+        direction TB
+        Cp["Coordinator"] -->|"one turn"| T1["Task A"]
+        Cp -->|"one turn"| T2["Task B"]
+        Cp -->|"one turn"| T3["Task C"]
+    end
+    subgraph seq ["✗ Sequential — one Task call per turn"]
+        direction TB
+        Cs["Coordinator"] -->|"turn 1"| T4["Task A"]
+        T4 -.->|"wait"| Cs
+        Cs -->|"turn 2"| T5["Task B"]
+        T5 -.->|"wait"| Cs
+        Cs -->|"turn 3"| T6["Task C"]
+    end
 ```
 
 ## Task decomposition strategies

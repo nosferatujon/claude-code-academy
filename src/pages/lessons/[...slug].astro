@@ -26,4 +26,58 @@ const { Content } = await render(lesson);
     <Content />
   </article>
 
+  <style>
+    .mermaid {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+      text-align: center;
+    }
+    .mermaid svg { max-width: 100%; height: auto; }
+  </style>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        background: '#1b1f2a',
+        primaryColor: '#252a38',
+        primaryTextColor: '#e6e8ee',
+        primaryBorderColor: '#3a4058',
+        lineColor: '#9aa3b2',
+        secondaryColor: '#171a23',
+        tertiaryColor: '#0f1117',
+        edgeLabelBackground: '#252a38',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        fontSize: '14px',
+        clusterBkg: '#171a23',
+        clusterBorder: '#3a4058',
+        actorBkg: '#252a38',
+        actorBorder: '#3a4058',
+        actorTextColor: '#e6e8ee',
+        noteBkgColor: '#1b1f2a',
+        noteBorderColor: '#3a4058',
+        noteTextColor: '#9aa3b2',
+        labelTextColor: '#9aa3b2',
+        loopTextColor: '#9aa3b2',
+        messageTextColor: '#9aa3b2',
+        signalColor: '#9aa3b2',
+        activationBkgColor: '#3a4058',
+      },
+    });
+    document.querySelectorAll('pre code.language-mermaid').forEach(el => {
+      const pre = el.parentElement;
+      const div = document.createElement('div');
+      div.className = 'mermaid';
+      div.textContent = el.textContent ?? '';
+      pre.replaceWith(div);
+    });
+    await mermaid.run();
+  </script>
+
 </Base>

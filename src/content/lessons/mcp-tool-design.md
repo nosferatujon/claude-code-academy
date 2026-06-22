@@ -28,6 +28,15 @@ MCP has three roles:
 You → Claude Code (host + client) → MCP Server (your tools/data)
 ```
 
+```mermaid
+flowchart LR
+    You(["You"]) --> CC["Claude Code\nHost + Client"]
+    CC <-->|"MCP Protocol"| Srv["MCP Server\nyour tools & data"]
+    Srv <--> Ext[("External API\nor Database")]
+    style You fill:#252a38,stroke:#3a4058
+    style Srv fill:#3a2a24,stroke:#d97757
+```
+
 When you ask Claude Code to do something, it can invoke tools on connected MCP servers, just like it can use its built-in Read or Edit tools.
 
 ## The three server primitives
@@ -147,6 +156,20 @@ Structure your error responses with enough information for the agent to make goo
 | Validation | Bad input (wrong type, missing field) | Fix the call, don't retry as-is |
 | Business | Policy violation (e.g. item out of stock) | Report to user, don't retry |
 | Permission | Access denied | Escalate, don't retry |
+
+```mermaid
+flowchart TD
+    F["Tool returns isError: true"] --> C{"errorCategory?"}
+    C -->|"transient"| R["Retry after wait"]
+    C -->|"validation"| V["Fix the call\ndo not retry as-is"]
+    C -->|"business"| B["Report to user\ndo not retry"]
+    C -->|"permission"| P["Escalate\ndo not retry"]
+    style R fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+    style V fill:#2a2818,stroke:#d9a441,color:#e6e8ee
+    style B fill:#2a1818,stroke:#e06c6c,color:#e6e8ee
+    style P fill:#2a1818,stroke:#e06c6c,color:#e6e8ee
+    style F fill:#252a38,stroke:#3a4058
+```
 
 Return this as structured metadata — at minimum an `errorCategory`, an `isRetryable` boolean, and a human-readable description:
 

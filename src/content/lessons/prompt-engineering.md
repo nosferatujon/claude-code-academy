@@ -148,6 +148,19 @@ Even with good prompting, extractions sometimes fail validation. The right respo
 **When retrying doesn't work:**
 - The required information is absent from the source document. If the document doesn't contain an order number, retrying will just produce a fabricated one. Check for data absence before retrying.
 
+```mermaid
+flowchart TD
+    Doc["Source document"] --> Ex["Claude extracts data"]
+    Ex --> Val{"Passes validation?"}
+    Val -->|"Yes"| Done(["Use the result ✓"])
+    Val -->|"No — format error\ne.g. date as June 3rd not 2024-06-03"| Retry["Retry: resend original doc\n+ specific error feedback"]
+    Retry --> Ex
+    Val -->|"No — field absent\nfrom source document"| Abort(["Stop. Do not retry.\nRetrying will fabricate data."])
+    style Done fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+    style Abort fill:#2a1818,stroke:#e06c6c,color:#e6e8ee
+    style Retry fill:#2a2818,stroke:#d9a441,color:#e6e8ee
+```
+
 **How to retry effectively:**
 
 Send the original document + the failed extraction + specific validation errors. Don't just say "try again" — say "the `order_date` field should be ISO 8601 format (YYYY-MM-DD), but you returned 'June 3rd, 2024'."
@@ -202,6 +215,20 @@ For thorough code review, combine two passes:
 2. **Cross-file integration pass** — a separate agent that reviews the findings from step 1 and looks for cross-cutting issues: API contract violations, inconsistent error handling patterns, dependency cycle implications.
 
 This two-step approach catches both local bugs and system-level issues that single-agent review tends to miss.
+
+```mermaid
+flowchart TD
+    Code["Code to review"] --> Split["Split by file"]
+    Split --> F1["File A agent\nlocal analysis only"]
+    Split --> F2["File B agent\nlocal analysis only"]
+    Split --> F3["File C agent\nlocal analysis only"]
+    F1 --> Int["Integration agent\nreviews all findings for cross-file issues"]
+    F2 --> Int
+    F3 --> Int
+    Int --> Report(["Final review report"])
+    style Int fill:#3a2a24,stroke:#d97757
+    style Report fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+```
 
 ## What to remember for the exam
 
