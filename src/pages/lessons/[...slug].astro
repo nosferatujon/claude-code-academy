@@ -70,11 +70,10 @@ const { Content } = await render(lesson);
         activationBkgColor: '#3a4058',
       },
     });
-    document.querySelectorAll('pre code.language-mermaid').forEach(el => {
-      const pre = el.parentElement;
+    document.querySelectorAll('pre[data-language="mermaid"]').forEach(pre => {
       const div = document.createElement('div');
       div.className = 'mermaid';
-      div.textContent = el.textContent ?? '';
+      div.textContent = pre.textContent ?? '';
       pre.replaceWith(div);
     });
     await mermaid.run();
