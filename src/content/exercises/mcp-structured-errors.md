@@ -6,10 +6,10 @@ estMinutes: 25
 order: 2
 intro: Build a mock MCP tool that returns categorized errors so Claude can respond differently to transient failures, validation problems, business rule violations, and permission denials.
 steps:
-  - "Create a minimal MCP server in Node.js (or Python) with a single tool `query_records` that accepts a `filter` parameter."
-  - "Make the tool return different error shapes based on the filter value: use `transient` to simulate a timeout, `forbidden` for a permission error, `invalid` for a malformed input, and `empty` for a valid query with no results."
+  - "Create a mock MCP server in Node.js. To get started quickly, copy the starter template file from the workspace root: `cp mock-mcp-server-template.js mock-mcp-server.js`."
+  - "Open `mock-mcp-server.js` and complete the `TODO` sections to return different error shapes based on the filter value: use `transient` to simulate a timeout, `forbidden` for a permission error, `invalid` for a malformed input, and `empty` for a valid query with no results."
   - "Each error response should include three fields: `errorCategory` (one of transient/validation/business/permission), `isRetryable` (boolean), and `message` (human-readable description)."
-  - "Register the server in Claude Code with `claude mcp add`."
+  - "Register the server in Claude Code with `claude mcp add records -- node ./mock-mcp-server.js`."
   - "Ask Claude to call the tool with filter `transient` and observe: does it retry automatically given `isRetryable: true`?"
   - "Ask Claude to call with filter `forbidden` and observe: does it explain the permission error to you rather than retrying?"
   - "Ask Claude to call with filter `empty` and observe: it should report 'no records found' — NOT treat this as an error, because an empty result is a valid outcome."
