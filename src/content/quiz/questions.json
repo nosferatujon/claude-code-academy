@@ -772,16 +772,16 @@
   {
     "id": "workflows-permissions-allow",
     "domain": "workflows",
-    "difficulty": "beginner",
-    "question": "In .claude/settings.json, what does adding an entry to the `permissions.allow` array accomplish?",
+    "difficulty": "intermediate",
+    "question": "You configure Claude Code to run headlessly in your CI/CD runner to auto-run a linter and unit tests on every pull request. During the first test run, the CI pipeline hangs indefinitely on the step running Claude Code. Checking the runner's logs reveals the process is blocked on: 'Allow command \"npm run lint\"? (y/N)'. What is the most secure and reliable resolution?",
     "options": [
-      "It grants the named user account access to Claude Code",
-      "It pre-approves specific tool calls so Claude Code doesn't prompt for permission each time",
-      "It adds the tool to the list of available tools that can be installed",
-      "It logs all uses of the specified tool for audit purposes"
+      "Add a rule to the project's CLAUDE.md: 'When executing commands, always run them immediately without prompting the user.'",
+      "Add the command string 'npm run lint' to the `permissions.allow` array in the project's `.claude/settings.json` file",
+      "Run the CI script with a wrapper that programmatically inputs 'y' to the stdin stream of Claude Code on every prompt",
+      "Run Claude Code globally with a global override configuration that disables all security confirmations"
     ],
     "answer": 1,
-    "explanation": "The permissions.allow array in settings.json pre-approves specific tool calls (e.g., Bash commands matching a pattern), eliminating interactive permission prompts in CI or automated workflows where human approval is impractical."
+    "explanation": "The `permissions.allow` array in `.claude/settings.json` is specifically designed to pre-approve safe, routine commands in headless or automated environments. Prompt instructions (A) are ignored by the harness's prompt logic. Script wrappers (C) are fragile and run the risk of approving unexpected destructive commands. Disabling all confirmations (D) violates the principle of least privilege by exposing the machine to unverified shell executions."
   },
   {
     "id": "mcp-iserror-flag",
@@ -828,16 +828,16 @@
   {
     "id": "mcp-tool-choice",
     "domain": "mcp",
-    "difficulty": "intermediate",
-    "question": "You want the model to always call a specific validation tool on every turn, regardless of what it thinks is appropriate. Which tool_choice setting achieves this?",
+    "difficulty": "advanced",
+    "question": "You are building an automated document classifier using the Claude API. The pipeline must take a document, call the `classify_document` tool with a strict JSON schema, and return the classification results. In testing, you notice that in 15% of cases where a document is ambiguous, Claude returns a conversational text response explaining the ambiguity instead of calling the tool. How should you modify the API request to guarantee that the model always returns structured classification output without conversational text?",
     "options": [
-      "tool_choice: auto — the model will select the right tool naturally",
-      "tool_choice: any — the model must call at least one tool but picks which one",
-      "tool_choice: {type: 'tool', name: 'validate'} — forces a specific named tool call",
-      "tool_choice: none — disables tool use so the model focuses on text responses"
+      "Use prompt engineering to add: 'Do not write conversational text under any circumstances, only call the classify_document tool.'",
+      "Set the `tool_choice` parameter to 'any' in the API request configuration",
+      "Set the `tool_choice` parameter to {\"type\": \"tool\", \"name\": \"classify_document\"} in the API request configuration",
+      "Set the temperature parameter to 0.0 to make classification paths more deterministic"
     ],
     "answer": 2,
-    "explanation": "Setting tool_choice to a specific tool name forces the model to call exactly that tool. 'auto' lets the model decide. 'any' forces a call but allows choice. 'none' disables tool use entirely."
+    "explanation": "Forcing a specific tool via `tool_choice: {type: 'tool', name: 'classify_document'}` guarantees that the model will invoke that exact schema on its first turn, preventing conversational text fallbacks even in ambiguous cases. 'any' forces a tool call but doesn't guarantee which tool will be selected if others exist. Prompt instructions are probabilistic and fail on edge cases. Temperature doesn't restrict tool choice parameters."
   },
   {
     "id": "mcp-too-many-tools",
