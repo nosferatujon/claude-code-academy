@@ -12,6 +12,12 @@ lessons.sort((a, b) => a.data.order - b.data.order);
 ---
 
 <Base title="Home">
+  <div id="continue-card" class="card" style="display:none;margin-bottom:2rem">
+    <p style="margin:0 0 0.1rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim)">Continue where you left off</p>
+    <div id="continue-links" style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.6rem"></div>
+    <button id="continue-reset" style="margin-top:0.75rem;background:none;border:none;color:var(--text-dim);font-size:0.8rem;cursor:pointer;padding:0">Reset progress</button>
+  </div>
+
   <section class="course-hero">
     <div class="course-hero__eyebrow">Claude Certified Architect &mdash; Foundations (CCA-F) Exam Prep</div>
     <h1>Claude Code Academy</h1>
@@ -47,12 +53,6 @@ lessons.sort((a, b) => a.data.order - b.data.order);
       basic software development.
     </p>
   </section>
-
-  <div id="continue-card" class="card" style="display:none;margin-bottom:2rem">
-    <p style="margin:0 0 0.1rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim)">Continue where you left off</p>
-    <div id="continue-links" style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.6rem"></div>
-    <button id="continue-reset" style="margin-top:0.75rem;background:none;border:none;color:var(--text-dim);font-size:0.8rem;cursor:pointer;padding:0">Reset progress</button>
-  </div>
 
   <script>
     (function () {
