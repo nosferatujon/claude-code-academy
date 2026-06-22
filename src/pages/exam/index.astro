@@ -179,11 +179,11 @@ const poolByDomain = Object.fromEntries(
           return `<div class="${cls}" style="cursor:default">${escapeHtml(o)}</div>`;
         }).join('');
         const skipped = chosen === null
-          ? `<div class="opt incorrect" style="cursor:default;margin-bottom:0.25rem">✗ No answer selected</div>`
+          ? `<div class="opt incorrect" style="cursor:default;margin-bottom:0.25rem">No answer selected</div>`
           : '';
         return (
-          `<div class="q answered">` +
-          `<div class="qnum">${isCorrect ? '✓' : '✗'} Question ${i + 1} of ${results.length} &middot; ${escapeHtml(domainMeta[q.domain].name)}</div>` +
+          `<div class="q answered ${isCorrect ? 'q-correct' : 'q-wrong'}">` +
+          `<div class="qnum">Question ${i + 1} of ${results.length} · ${escapeHtml(domainMeta[q.domain].name)}</div>` +
           `<p><strong>${escapeHtml(q.question)}</strong></p>` +
           skipped +
           opts +
