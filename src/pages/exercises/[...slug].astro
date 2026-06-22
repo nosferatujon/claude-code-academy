@@ -2,24 +2,94 @@
 import { getCollection, render } from 'astro:content';
 import { marked } from 'marked';
 import Base from '../../layouts/Base.astro';
-import { domainName } from '../../data/domains';
+import { DOMAINS, domainName } from '../../data/domains';
+
+const DOMAIN_ORDER = DOMAINS.map((d) => d.id);
 
 export async function getStaticPaths() {
-  const exercises = await getCollection('exercises');
-  return exercises.map((exercise) => ({
-    params: { slug: exercise.id },
-    props: { exercise },
-  }));
+  const domainOrder = ['agentic', 'prompting', 'workflows', 'mcp', 'context'];
+  const allExercises = await getCollection('exercises');
+  const allLessons = await getCollection('lessons');
+
+  // Group exercises by domain, sorted within domain by order
+  const byDomain: Record<string, typeof allExercises> = {};
+  for (const e of allExercises) {
+    if (!byDomain[e.data.domain]) byDomain[e.data.domain] = [];
+    byDomain[e.data.domain].push(e);
+  }
+  for (const d of Object.keys(byDomain)) {
+    byDomain[d].sort((a, b) => a.data.order - b.data.order);
+  }
+
+  // Flat global list for computing "last exercise → exam" edge
+  const globalOrder = domainOrder.flatMap((d) => byDomain[d] ?? []);
+
+  return allExercises.map((exercise) => {
+    const domainList = byDomain[exercise.data.domain] ?? [];
+    const idx = domainList.findIndex((e) => e.id === exercise.id);
+    const globalIdx = globalOrder.findIndex((e) => e.id === exercise.id);
+    const isLastGlobal = globalIdx === globalOrder.length - 1;
+
+    // Next exercise: next in domain, or first in next domain, or null if last
+    const nextInDomain = domainList[idx + 1] ?? null;
+    const domainIdx = domainOrder.indexOf(exercise.data.domain);
+    const nextDomainId = domainOrder[domainIdx + 1];
+    const nextDomainFirst = nextDomainId ? (byDomain[nextDomainId]?.[0] ?? null) : null;
+    const next = nextInDomain ?? nextDomainFirst;
+
+    const prev = domainList[idx - 1] ?? null;
+
+    // Parent lesson for this domain
+    const lessonForDomain = allLessons.find((l) => l.data.domain === exercise.data.domain);
+    const lessonSlug = lessonForDomain?.id ?? null;
+
+    return {
+      params: { slug: exercise.id },
+      props: {
+        exercise,
+        domainExercises: domainList,
+        exerciseIndex: idx,
+        prev,
+        next,
+        isLastGlobal,
+        lessonSlug,
+      },
+    };
+  });
 }
 
-const { exercise } = Astro.props;
+const { exercise, domainExercises, exerciseIndex, prev, next, isLastGlobal, lessonSlug } = Astro.props;
 const d = exercise.data;
 const { Content } = await render(exercise);
 const solutionHtml = marked.parse(d.solution);
 ---
 
 <Base title={d.title} description={d.intro}>
-  <p class="muted"><a href="/exercises/">&larr; All exercises</a></p>
+
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb" aria-label="breadcrumb">
+    <a href="/">Home</a>
+    <span class="breadcrumb__sep">/</span>
+    <a href="/exercises/">Exercises</a>
+    <span class="breadcrumb__sep">/</span>
+    <a href={`/exercises/#${d.domain}`}>{domainName(d.domain)}</a>
+    <span class="breadcrumb__sep">/</span>
+    <span aria-current="page">{d.title}</span>
+  </nav>
+
+  <!-- Module context -->
+  <div class="module-context">
+    <span class="module-context__pos">
+      Exercise {exerciseIndex + 1} of {domainExercises.length} in this module
+    </span>
+    {lessonSlug && (
+      <>
+        <span>&middot;</span>
+        <a href={`/lessons/${lessonSlug}/`}>Read the lesson first &rarr;</a>
+      </>
+    )}
+  </div>
+
   <div class="meta-row">
     <span class="badge">{domainName(d.domain)}</span>
     <span class={`badge ${d.difficulty}`}>{d.difficulty}</span>
@@ -69,5 +139,35 @@ const solutionHtml = marked.parse(d.solution);
     <summary>Reveal model solution</summary>
     <div class="body" set:html={solutionHtml} />
   </details>
+
+  <!-- Prev / Next -->
+  <nav class="course-nav" aria-label="exercise navigation">
+    <div>
+      {prev ? (
+        <a class="course-nav__btn course-nav__btn--prev" href={`/exercises/${prev.id}/`}>
+          <span class="course-nav__dir">&larr; Previous exercise</span>
+          <span class="course-nav__title">{prev.data.title}</span>
+        </a>
+      ) : (
+        <a class="course-nav__btn course-nav__btn--prev" href={`/exercises/#${d.domain}`}>
+          <span class="course-nav__dir">&larr; Back to</span>
+          <span class="course-nav__title">{domainName(d.domain)} exercises</span>
+        </a>
+      )}
+    </div>
+    <div>
+      {isLastGlobal ? (
+        <a class="course-nav__btn course-nav__btn--next" href="/exam/">
+          <span class="course-nav__dir">All done &rarr;</span>
+          <span class="course-nav__title">Take the Practice Exam</span>
+        </a>
+      ) : next ? (
+        <a class="course-nav__btn course-nav__btn--next" href={`/exercises/${next.id}/`}>
+          <span class="course-nav__dir">Next exercise &rarr;</span>
+          <span class="course-nav__title">{next.data.title}</span>
+        </a>
+      ) : null}
+    </div>
+  </nav>
 
 </Base>

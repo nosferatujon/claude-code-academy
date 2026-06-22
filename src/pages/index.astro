@@ -3,43 +3,73 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import { DOMAINS } from '../data/domains';
 
+const lessons = await getCollection('lessons');
+const exercises = await getCollection('exercises');
 const quiz = await getCollection('quiz');
+
+exercises.sort((a, b) => a.data.order - b.data.order);
+lessons.sort((a, b) => a.data.order - b.data.order);
 ---
 
-<Base title="Dashboard">
-  <h1>Learn Claude Code, the hands-on way</h1>
-  <p class="lead">
-    Practice real Claude Code workflows in your own terminal, then check your readiness for the
-    Claude Certified Architect&nbsp;&mdash;&nbsp;Foundations (CCA-F) exam.
-  </p>
+<Base title="Home">
+  <section class="course-hero">
+    <div class="course-hero__eyebrow">CCA-F Certification Prep</div>
+    <h1>Claude Code Academy</h1>
+    <p class="lead">
+      Master Claude Code and prepare for the Claude Certified Architect&nbsp;&mdash;&nbsp;Foundations
+      exam through structured lessons, hands-on exercises, and timed practice exams.
+    </p>
+    <div class="toolbar" style="justify-content:center">
+      <a class="btn" href="/lessons/agentic-architecture/">Start Learning</a>
+      <a class="btn secondary" href="/exam/">Practice Exam</a>
+    </div>
+    <div class="course-stats">
+      <div class="course-stat"><span>5</span>Modules</div>
+      <div class="course-stat"><span>5</span>Lessons</div>
+      <div class="course-stat"><span>{exercises.length}</span>Exercises</div>
+      <div class="course-stat"><span>{quiz.length}</span>Quiz Questions</div>
+    </div>
+  </section>
 
-  <div class="toolbar">
-    <a class="btn" href="/exercises/">Start exercising</a>
-    <a class="btn secondary" href="/exam/">Take a practice exam</a>
-  </div>
+  <h2>Course Curriculum</h2>
 
-  <h2>The five exam domains</h2>
-
-  <div class="grid cols-2">
-    {DOMAINS.map((d) => (
-      <div class="card" data-domain={d.id}>
-        <h3>{d.name}</h3>
-        <div class="meta-row">
-          <span class="badge weight">{d.weight}% of exam</span>
-          {d.practiceable
-            ? <span class="badge beginner">Hands-on</span>
-            : <span class="badge concept">Concept-focused</span>}
+  <div style="display:flex;flex-direction:column;gap:0.75rem">
+    {DOMAINS.map((d, i) => {
+      const domainLessons = lessons.filter((l) => l.data.domain === d.id);
+      const domainExercises = exercises.filter((e) => e.data.domain === d.id);
+      return (
+        <div class="module-card">
+          <div class="module-card__header">
+            <span class="module-num">Module {i + 1}</span>
+            <span class="badge weight">{d.weight}% of exam</span>
+            {d.practiceable
+              ? <span class="badge beginner">Hands-on</span>
+              : <span class="badge concept">Concept-focused</span>}
+          </div>
+          <h3>{d.name}</h3>
+          <p class="muted" style="margin:0 0 0.25rem;font-size:0.88rem">{d.blurb}</p>
+          <ul class="module-items">
+            {domainLessons.map((l) => (
+              <li class="module-item module-item--lesson">
+                <span class="module-item__type">Lesson</span>
+                <a href={`/lessons/${l.id}/`}>{l.data.title}</a>
+                <span class="module-item__meta">{l.data.minutes} min read</span>
+              </li>
+            ))}
+            {domainExercises.map((e) => (
+              <li class="module-item module-item--exercise">
+                <span class="module-item__type">Exercise</span>
+                <a href={`/exercises/${e.id}/`}>{e.data.title}</a>
+                <span class={`badge ${e.data.difficulty}`} style="margin-left:auto">{e.data.difficulty}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <p class="muted">{d.blurb}</p>
-        <p style="margin:0.5rem 0 0">
-          <a href={`/exercises/#${d.id}`}>Exercises</a> &nbsp;·&nbsp;
-          <a href={`/lessons/#${d.id}`}>Lessons</a>
-        </p>
-      </div>
-    ))}
+      );
+    })}
   </div>
 
-  <h2>How this works</h2>
+  <h2 style="margin-top:3rem">How this works</h2>
   <div class="grid cols-2">
     <div class="card">
       <h3>You only need Claude Code</h3>

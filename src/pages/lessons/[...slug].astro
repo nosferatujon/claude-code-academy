@@ -1,32 +1,132 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { domainName } from '../../data/domains';
+import { DOMAINS, domainName } from '../../data/domains';
+
+const DOMAIN_ORDER = DOMAINS.map((d) => d.id);
 
 export async function getStaticPaths() {
-  const lessons = await getCollection('lessons');
-  return lessons.map((lesson) => ({
+  const domainOrder = ['agentic', 'prompting', 'workflows', 'mcp', 'context'];
+  const all = await getCollection('lessons');
+  const sorted = [...all].sort((a, b) => {
+    const di = domainOrder.indexOf(a.data.domain) - domainOrder.indexOf(b.data.domain);
+    return di !== 0 ? di : a.data.order - b.data.order;
+  });
+
+  return sorted.map((lesson, idx) => ({
     params: { slug: lesson.id },
-    props: { lesson },
+    props: {
+      lesson,
+      allLessons: sorted,
+      lessonIndex: idx,
+      lessonTotal: sorted.length,
+      prev: sorted[idx - 1] ?? null,
+      next: sorted[idx + 1] ?? null,
+    },
   }));
 }
 
-const { lesson } = Astro.props;
+const { lesson, allLessons, lessonIndex, lessonTotal, prev, next } = Astro.props;
 const { Content } = await render(lesson);
+const progressPct = Math.round(((lessonIndex + 1) / lessonTotal) * 100);
 ---
 
-<Base title={lesson.data.title} description={lesson.data.summary}>
-  <p class="muted"><a href="/lessons/">&larr; All lessons</a></p>
-  <div class="meta-row">
-    <span class="badge">{domainName(lesson.data.domain)}</span>
-    <span>{lesson.data.minutes} min read</span>
+<Base title={lesson.data.title} description={lesson.data.summary} fullWidth={true}>
+  <div class="content-with-sidebar">
+
+    <!-- Sidebar: course outline -->
+    <aside class="course-sidebar">
+      <span class="course-sidebar__label">Course Outline</span>
+      <ol class="sidebar-list">
+        {allLessons.map((l, i) => (
+          <li class={`sidebar-list__item ${l.id === lesson.id ? 'is-current' : ''}`}>
+            <a href={`/lessons/${l.id}/`}>
+              <span class="sidebar-list__num">{i + 1}</span>
+              <span class="sidebar-list__title">{l.data.title}</span>
+              <span class="sidebar-list__meta">{l.data.minutes} min</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+      <p style="margin:1.25rem 0 0;font-size:0.8rem">
+        <a href="/exercises/" style="color:var(--text-dim)">View exercises &rarr;</a>
+      </p>
+    </aside>
+
+    <!-- Main content -->
+    <div class="content-main">
+
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb" aria-label="breadcrumb">
+        <a href="/">Home</a>
+        <span class="breadcrumb__sep">/</span>
+        <a href="/lessons/">Curriculum</a>
+        <span class="breadcrumb__sep">/</span>
+        <span aria-current="page">{lesson.data.title}</span>
+      </nav>
+
+      <!-- Lesson X of N -->
+      <div class="lesson-position">
+        <span class="lesson-position__text">Lesson {lessonIndex + 1} of {lessonTotal}</span>
+        <div class="progress" style="width:140px">
+          <span style={`width:${progressPct}%`}></span>
+        </div>
+      </div>
+
+      <div class="meta-row">
+        <span class="badge">{domainName(lesson.data.domain)}</span>
+        <span>{lesson.data.minutes} min read</span>
+      </div>
+      <h1>{lesson.data.title}</h1>
+
+      <article>
+        <Content />
+      </article>
+
+      <!-- Prev / Next -->
+      <nav class="course-nav" aria-label="lesson navigation">
+        <div>
+          {prev ? (
+            <a class="course-nav__btn course-nav__btn--prev" href={`/lessons/${prev.id}/`}>
+              <span class="course-nav__dir">&larr; Previous lesson</span>
+              <span class="course-nav__title">{prev.data.title}</span>
+            </a>
+          ) : (
+            <a class="course-nav__btn course-nav__btn--prev" href="/lessons/">
+              <span class="course-nav__dir">&larr; Back to</span>
+              <span class="course-nav__title">Curriculum</span>
+            </a>
+          )}
+        </div>
+        <div>
+          {next ? (
+            <a class="course-nav__btn course-nav__btn--next" href={`/lessons/${next.id}/`}>
+              <span class="course-nav__dir">Next lesson &rarr;</span>
+              <span class="course-nav__title">{next.data.title}</span>
+            </a>
+          ) : (
+            <a class="course-nav__btn course-nav__btn--next" href="/exam/">
+              <span class="course-nav__dir">All lessons done &rarr;</span>
+              <span class="course-nav__title">Take the Practice Exam</span>
+            </a>
+          )}
+        </div>
+      </nav>
+
+      <!-- Cross-link to exercises -->
+      <p style="margin-top:1.5rem;font-size:0.88rem;color:var(--text-dim)">
+        Ready to practice?
+        <a href={`/exercises/#${lesson.data.domain}`}>
+          View exercises for {domainName(lesson.data.domain)} &rarr;
+        </a>
+      </p>
+
+    </div>
   </div>
-  <h1>{lesson.data.title}</h1>
-  <article>
-    <Content />
-  </article>
 
   <style>
+    .content-main { min-width: 0; padding-bottom: 3rem; }
+    .content-main article { margin-top: 1rem; }
     .mermaid {
       background: var(--bg-card);
       border: 1px solid var(--border);

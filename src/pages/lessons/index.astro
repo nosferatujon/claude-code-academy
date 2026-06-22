@@ -4,28 +4,46 @@ import Base from '../../layouts/Base.astro';
 import { DOMAINS } from '../../data/domains';
 
 const lessons = await getCollection('lessons');
+const exercises = await getCollection('exercises');
+
 lessons.sort((a, b) => a.data.order - b.data.order);
+exercises.sort((a, b) => a.data.order - b.data.order);
 ---
 
-<Base title="Lessons">
-  <h1>Lessons</h1>
+<Base title="Course Curriculum">
+  <h1>Course Curriculum</h1>
   <p class="lead">
-    Short readings covering all five exam domains &mdash; including the Agent SDK and Claude API
-    concepts you can&rsquo;t run hands-on but still need to know for the exam.
+    Five modules covering every CCA-F exam domain &mdash; read the lesson, then reinforce it with
+    hands-on exercises before sitting the practice exam.
   </p>
 
-  {DOMAINS.map((d) => {
-    const items = lessons.filter((l) => l.data.domain === d.id);
-    if (!items.length) return null;
+  {DOMAINS.map((d, i) => {
+    const domainLessons = lessons.filter((l) => l.data.domain === d.id);
+    const domainExercises = exercises.filter((e) => e.data.domain === d.id);
+    if (!domainLessons.length && !domainExercises.length) return null;
     return (
-      <section id={d.id}>
-        <h2>{d.name} <span class="badge weight">{d.weight}%</span></h2>
-        <div class="grid cols-2">
-          {items.map((l) => (
-            <a class="card" href={`/lessons/${l.id}/`}>
-              <h3>{l.data.title}</h3>
-              <p class="muted">{l.data.summary}</p>
-              <p class="muted" style="margin-bottom:0">{l.data.minutes} min read</p>
+      <section id={d.id} class="curriculum-section">
+        <div class="curriculum-section__header">
+          <span class="module-num">Module {i + 1}</span>
+          <h2>{d.name}</h2>
+          <span class="badge weight">{d.weight}%</span>
+        </div>
+        <p class="muted" style="margin:0;font-size:0.9rem">{d.blurb}</p>
+        <div class="curriculum-section__items">
+          {domainLessons.map((l) => (
+            <a class="curriculum-row curriculum-row--lesson" href={`/lessons/${l.id}/`}>
+              <span class="curriculum-row__type">Lesson</span>
+              <span class="curriculum-row__title">{l.data.title}</span>
+              <span class="curriculum-row__meta">{l.data.minutes} min read</span>
+              <span />
+            </a>
+          ))}
+          {domainExercises.map((e) => (
+            <a class="curriculum-row curriculum-row--exercise" href={`/exercises/${e.id}/`}>
+              <span class="curriculum-row__type">Exercise</span>
+              <span class="curriculum-row__title">{e.data.title}</span>
+              <span class={`badge ${e.data.difficulty}`}>{e.data.difficulty}</span>
+              <span class="curriculum-row__meta">{e.data.estMinutes} min</span>
             </a>
           ))}
         </div>

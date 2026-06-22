@@ -4,13 +4,14 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  fullWidth?: boolean;
 }
 
-const { title, description = 'Learn Claude Code by doing, and prepare for the CCA-F certification.' } = Astro.props;
+const { title, description = 'Learn Claude Code by doing, and prepare for the CCA-F certification.', fullWidth = false } = Astro.props;
 
 const nav = [
-  { href: '/', label: 'Dashboard' },
-  { href: '/lessons/', label: 'Lessons' },
+  { href: '/', label: 'Home' },
+  { href: '/lessons/', label: 'Curriculum' },
   { href: '/exercises/', label: 'Exercises' },
   { href: '/exam/', label: 'Practice Exam' },
 ];
@@ -32,7 +33,10 @@ const isCurrent = (href: string) =>
   <body>
     <header class="site">
       <div class="container bar">
-        <a class="brand" href="/">Claude Code <span>Academy</span></a>
+        <a class="brand" href="/">
+          Claude Code <span>Academy</span>
+          <small class="brand-subtitle">CCA-F Prep</small>
+        </a>
         <nav class="main">
           {nav.map((n) => (
             <a href={n.href} aria-current={isCurrent(n.href) ? 'page' : undefined}>{n.label}</a>
@@ -41,9 +45,7 @@ const isCurrent = (href: string) =>
       </div>
     </header>
     <main>
-      <div class="container">
-        <slot />
-      </div>
+      {fullWidth ? <slot /> : <div class="container"><slot /></div>}
     </main>
     <footer class="site">
       <div class="container">

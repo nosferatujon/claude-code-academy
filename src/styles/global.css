@@ -167,3 +167,83 @@ pre code { background: none; border: none; padding: 0; }
 .tablelike { width: 100%; border-collapse: collapse; }
 .tablelike th, .tablelike td { text-align: left; padding: 0.6rem 0.5rem; border-bottom: 1px solid var(--border); }
 .tablelike th { color: var(--text-dim); font-weight: 600; font-size: 0.85rem; }
+
+/* ── MOOC redesign additions ─────────────────────────────────────────────── */
+
+/* Brand subtitle */
+.brand-subtitle { display: block; font-size: 0.62rem; font-weight: 400; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; line-height: 1; }
+
+/* Course hero (homepage) */
+.course-hero { text-align: center; padding: 3rem 0 2rem; }
+.course-hero__eyebrow { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.75rem; }
+.course-stats { display: flex; gap: 2.5rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem; }
+.course-stat { text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+.course-stat span { display: block; font-size: 1.8rem; font-weight: 700; color: var(--text); line-height: 1.1; }
+
+/* Module card (homepage curriculum preview) */
+.module-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; }
+.module-card__header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem; }
+.module-num { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); font-weight: 700; }
+.module-card h3 { margin: 0 0 0.3rem; font-size: 1rem; }
+.module-items { list-style: none; padding: 0; margin: 0.75rem 0 0; border-top: 1px solid var(--border); }
+.module-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+.module-item:last-child { border-bottom: none; }
+.module-item a { flex: 1; color: var(--text); }
+.module-item a:hover { color: var(--accent); text-decoration: none; }
+.module-item__type { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; width: 54px; flex-shrink: 0; }
+.module-item--lesson .module-item__type { color: var(--accent); }
+.module-item--exercise .module-item__type { color: var(--green); }
+.module-item__meta { color: var(--text-dim); font-size: 0.78rem; white-space: nowrap; margin-left: auto; }
+
+/* Curriculum rows (/lessons/ index) */
+.curriculum-section { margin: 2.5rem 0; }
+.curriculum-section__header { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.25rem; }
+.curriculum-section__header h2 { margin: 0; font-size: 1.2rem; }
+.curriculum-section__items { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 0.75rem; }
+.curriculum-row { display: grid; grid-template-columns: 70px 1fr auto auto; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); color: var(--text); background: var(--bg-card); text-decoration: none; transition: background 0.12s; }
+.curriculum-row:last-child { border-bottom: none; }
+.curriculum-row:hover { background: var(--bg-soft); }
+.curriculum-row__type { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+.curriculum-row--lesson .curriculum-row__type { color: var(--accent); }
+.curriculum-row--exercise .curriculum-row__type { color: var(--green); }
+.curriculum-row__title { font-size: 0.9rem; }
+.curriculum-row__meta { color: var(--text-dim); font-size: 0.8rem; white-space: nowrap; }
+@media (max-width: 600px) { .curriculum-row { grid-template-columns: 60px 1fr auto; } .curriculum-row__meta { display: none; } }
+
+/* Two-column layout for lesson detail (sidebar + content) */
+.content-with-sidebar { display: grid; grid-template-columns: 220px 1fr; gap: 2.5rem; align-items: start; max-width: var(--maxw); margin: 0 auto; padding: 0 1.25rem; }
+@media (max-width: 760px) { .content-with-sidebar { grid-template-columns: 1fr; } }
+
+/* Sidebar */
+.course-sidebar { position: sticky; top: 76px; }
+.course-sidebar__label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); font-weight: 700; margin: 0 0 0.5rem; display: block; }
+.sidebar-list { list-style: none; padding: 0; margin: 0; }
+.sidebar-list__item a { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.55rem 0.6rem; border-radius: 8px; color: var(--text-dim); font-size: 0.84rem; text-decoration: none; }
+.sidebar-list__item a:hover { background: var(--bg-soft); color: var(--text); }
+.sidebar-list__item.is-current a { background: var(--accent-soft); color: var(--text); }
+.sidebar-list__num { font-size: 0.72rem; font-weight: 700; color: var(--text-dim); }
+.sidebar-list__item.is-current .sidebar-list__num { color: var(--accent); }
+.sidebar-list__title { line-height: 1.3; }
+.sidebar-list__meta { font-size: 0.75rem; color: var(--text-dim); }
+
+/* Breadcrumb */
+.breadcrumb { display: flex; align-items: center; gap: 0.35rem; font-size: 0.83rem; color: var(--text-dim); margin-bottom: 1rem; flex-wrap: wrap; }
+.breadcrumb a { color: var(--text-dim); }
+.breadcrumb a:hover { color: var(--text); }
+.breadcrumb__sep { color: var(--border); }
+
+/* Lesson X of N progress indicator */
+.lesson-position { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.lesson-position__text { font-size: 0.8rem; color: var(--text-dim); white-space: nowrap; }
+
+/* Prev/Next nav (shared: lessons + exercises) */
+.course-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); }
+.course-nav__btn { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.9rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); color: var(--text); text-decoration: none; transition: border-color 0.15s; }
+.course-nav__btn:hover { border-color: var(--accent); text-decoration: none; }
+.course-nav__btn--next { text-align: right; }
+.course-nav__dir { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
+.course-nav__title { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+
+/* Module context banner (exercise detail pages) */
+.module-context { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; font-size: 0.84rem; color: var(--text-dim); margin-bottom: 1rem; padding: 0.6rem 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+.module-context__pos { font-weight: 600; color: var(--text); }
