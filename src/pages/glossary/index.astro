@@ -1,0 +1,127 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const terms = [
+  {
+    term: 'Agent',
+    definition:
+      'An AI model that runs a loop: it takes an action, observes what happened, and decides what to do next — rather than just answering once and stopping. Claude Code is an agent: when you give it a task, it reads files, makes edits, runs tests, and keeps going until the task is done.',
+  },
+  {
+    term: 'Agentic loop',
+    definition:
+      'The repeated cycle every agent runs: gather context → decide → act (call a tool) → observe the result → repeat. The loop continues until <code>stop_reason</code> is <code>end_turn</code>, which signals that Claude is finished.',
+  },
+  {
+    term: 'CLAUDE.md',
+    definition:
+      'A Markdown file that Claude Code reads automatically at the start of every session. Use it to store durable project facts: build commands, coding conventions, and off-limits files. Think of it as project memory that persists between sessions so you never have to re-explain your project.',
+  },
+  {
+    term: 'Compaction',
+    definition:
+      'When a long conversation approaches the context window limit, older turns are summarized to free up space. Specific facts — numbers, dates, exact values — can be lost during compaction. Important details should be written to files (like CLAUDE.md) rather than left only in the conversation.',
+  },
+  {
+    term: 'Context window',
+    definition:
+      'Everything Claude can "see" at once — its working memory for a conversation. It includes your messages, Claude\'s replies, tool results (like file contents), and the system prompt. It has a fixed size limit measured in tokens; once full, older content is dropped or compacted.',
+  },
+  {
+    term: 'Few-shot prompting',
+    definition:
+      'Providing 2–4 examples of input → expected output in your prompt before asking Claude to handle new input. This teaches Claude a pattern by demonstration rather than by description alone. Three examples is usually enough for the model to learn the rule.',
+  },
+  {
+    term: 'Hook',
+    definition:
+      'A shell command that runs automatically at a specific moment in Claude Code\'s lifecycle — before a tool call, after a tool call, when you submit a message, or when Claude stops responding. Hooks are enforced by the harness (the software running Claude), not by Claude itself, so Claude cannot bypass them.',
+  },
+  {
+    term: 'MCP (Model Context Protocol)',
+    definition:
+      'An open standard for connecting AI applications to external tools and data sources. With MCP, you build a server once and any MCP-compatible application — Claude Code, Claude Desktop, or your own app — can use it. Think of it as USB-C for AI tools: one standard connector for everything.',
+  },
+  {
+    term: 'Orchestrator',
+    definition:
+      'In a multi-agent system, the agent that receives the overall goal, breaks it into sub-tasks, and delegates each one to worker agents. The orchestrator coordinates the work; workers execute their specific piece and return results.',
+  },
+  {
+    term: 'Plan mode',
+    definition:
+      'A Claude Code mode where Claude researches your task and writes a plan, but makes no file changes until you approve. Enable it with <code>/plan</code>. Useful for risky or large refactors where you want to review the approach first.',
+  },
+  {
+    term: 'Resource',
+    definition:
+      'In MCP, read-only data that an application loads into the conversation as context — like a file\'s contents or a database record. Unlike tools (which Claude calls when it decides to), resources are controlled by the application or user and loaded before Claude sees them.',
+  },
+  {
+    term: 'Slash command',
+    definition:
+      'A saved prompt you invoke by typing <code>/command-name</code> in Claude Code. Stored as a Markdown file in <code>.claude/commands/</code>. Good for tasks you repeat with the same instructions — code review, release notes, generating boilerplate.',
+  },
+  {
+    term: 'stop_reason',
+    definition:
+      'A field on every Claude API response that tells the loop whether to continue. <code>tool_use</code> means Claude wants to call a tool — keep looping. <code>end_turn</code> means Claude is done — stop. <code>max_tokens</code> means the response was cut off by the token limit.',
+  },
+  {
+    term: 'Subagent / Worker',
+    definition:
+      'In a multi-agent system, an agent spawned by an orchestrator to handle a specific sub-task. Each subagent starts with a fresh, empty context window and returns only its result to the orchestrator — keeping the orchestrator\'s context clean.',
+  },
+  {
+    term: 'Token',
+    definition:
+      'The basic unit Claude processes, roughly equivalent to one short word or word-fragment. Context windows and API costs are both measured in tokens. A 4-page document is roughly 2,000 tokens. You don\'t need to count tokens manually, but understanding the concept helps you reason about context limits.',
+  },
+  {
+    term: 'Tool',
+    definition:
+      'A function Claude can call during a task to take action or retrieve data — read a file, run a command, search the web. In MCP, tools are model-controlled: Claude decides when and how to call them. Compare to resources, which are loaded by the application before Claude sees them.',
+  },
+  {
+    term: 'Transport',
+    definition:
+      'The communication channel between an MCP client and server. <code>stdio</code> runs the server as a local subprocess on the same machine (good for personal developer tools). HTTP runs it over the network (good for shared team services that multiple people need to access).',
+  },
+].sort((a, b) => a.term.localeCompare(b.term));
+---
+
+<Base title="Glossary" description="Key terms for Claude Code and AI development, explained for beginners.">
+
+  <nav class="breadcrumb" aria-label="breadcrumb" style="margin-bottom:1.5rem">
+    <a href="/">Home</a>
+    <span class="breadcrumb__sep">/</span>
+    <a href="/lessons/">Curriculum</a>
+    <span class="breadcrumb__sep">/</span>
+    <span aria-current="page">Glossary</span>
+  </nav>
+
+  <h1>Glossary</h1>
+  <p class="lead">New to Claude Code or AI development? These are the terms you'll run into throughout the course.</p>
+  <p style="color:var(--text-dim);font-size:0.9rem;margin-bottom:2rem">
+    {terms.length} terms, alphabetical order.
+    When you see an unfamiliar word in a lesson or exercise, come back here.
+  </p>
+
+  <div style="display:flex;flex-direction:column;gap:0.75rem">
+    {terms.map((t) => (
+      <div class="card" id={t.term.toLowerCase().replace(/[^a-z0-9]+/g, '-')}>
+        <div style="display:flex;align-items:baseline;gap:0.75rem;margin-bottom:0.4rem;flex-wrap:wrap">
+          <strong style="font-size:1.05rem">{t.term}</strong>
+          <span class="badge concept">term</span>
+        </div>
+        <p style="margin:0;color:var(--text-dim);font-size:0.93rem" set:html={t.definition} />
+      </div>
+    ))}
+  </div>
+
+  <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;gap:1rem;flex-wrap:wrap">
+    <a href="/lessons/" class="btn secondary">&larr; Back to Curriculum</a>
+    <a href="/exercises/" class="btn secondary">Exercises &rarr;</a>
+  </div>
+
+</Base>

@@ -41,4 +41,9 @@ solution: |
   What changed: the examples *demonstrate* the boundaries — a vague compliment maps to `other`, a request maps to `feature`. The model imitates the pattern instead of guessing your intent from prose. This is why few-shot is the go-to technique for formatting and classification on the exam.
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  Claude Code installed, or access to Claude at claude.ai. No programming knowledge required — this exercise uses Claude as a tool, not code you write.
+</div>
+
 **Why this matters:** Few-shot prompting is one of the highest-leverage techniques in the Prompt Engineering domain. The exam wants you to recognize *when* to reach for examples (formatting, classification, edge-case behavior) and that quality and coverage of examples matter more than quantity.

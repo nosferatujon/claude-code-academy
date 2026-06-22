@@ -81,4 +81,9 @@ solution: |
   You will see a list of active context files. The rule file should appear when the current file matches the glob and be absent otherwise.
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  Claude Code installed. Completed <strong>Write your first CLAUDE.md</strong> — you'll be building on that foundation here.
+</div>
+
 **Why this matters:** Path-scoped rules are a precision tool for context efficiency. Rather than loading all conventions for every file, you pay only for the rules that apply. The exam tests both the syntax (`paths:` YAML frontmatter, glob patterns) and the conceptual distinction between directory-scoped `CLAUDE.md` files (which load for any file under a directory) and glob-scoped rules (which load only for files matching the pattern).

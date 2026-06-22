@@ -87,4 +87,9 @@ solution: |
   - Environment variable expansion keeps secrets and machine-specific paths out of committed config.
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  Claude Code installed. Node.js 18+ and npm installed (needed to run <code>npx</code> commands). Comfort using the command line. Read the <strong>Tool Design & MCP Integration</strong> lesson first.
+</div>
+
 **Why this matters:** MCP is how Claude Code reaches beyond your repo — databases, issue trackers, internal APIs. The exam tests the architecture (host → client → server), the three primitives (tools, resources, prompts), the two config scopes (user vs project), environment variable expansion, the transports (stdio vs HTTP), and the security mindset of granting least privilege.

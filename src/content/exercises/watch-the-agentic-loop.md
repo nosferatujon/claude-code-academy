@@ -58,4 +58,9 @@ solution: |
   - **Orchestration:** steps 2 and 3 are largely independent and could be fanned out to workers; step 4 depends on both and must run after.
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  Claude Code installed. A project you can run a real task on — any language, any size. No programming required; you're observing Claude's behavior, not writing code.
+</div>
+
 **Why this matters:** `stop_reason` is the signal that drives the agentic loop. When it is `tool_use` the harness must keep going; when it is `end_turn` the task is complete. Confusing the two — or not handling `max_tokens` — is a common source of agents that silently truncate. The exam expects you to know all three values and what each requires from the host.

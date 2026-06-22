@@ -58,4 +58,9 @@ solution: |
   This is the practical payoff of the context-management domain: hand off *results, not transcripts*. The same discipline applies to multi-agent systems built with the Agent SDK — workers report conclusions, the orchestrator stays clean.
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  Claude Code installed. A real codebase to explore — your own project works well. Read the <strong>Agentic Architecture</strong> lesson first; this exercise assumes you understand what sub-agents are and why they exist.
+</div>
+
 **Why this matters:** Context is a finite, shared budget. The exam rewards knowing that sub-agents are a context-management tool — they isolate noisy work and return only conclusions. But it also tests the mechanics: `allowedTools` must include `'Task'` for delegation to work, and sub-agents receive no inherited context, so the orchestrator's prompt must be self-contained.

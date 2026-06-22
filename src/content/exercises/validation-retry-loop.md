@@ -124,4 +124,9 @@ solution: |
   | Information genuinely absent | No | The source document doesn't contain it; retrying produces the same null |
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  Python 3.8+ installed. An Anthropic API key set as the <code>ANTHROPIC_API_KEY</code> environment variable. Completing <strong>Coax reliable JSON out of Claude</strong> first is strongly recommended.
+</div>
+
 **Why this matters:** Retry loops are a critical reliability pattern for extraction agents. The exam tests both the mechanics (appending failed result + specific error message to the conversation) and the judgment call — knowing that retry is ineffective when the source is silent, and that a partial result with a clear `complete: false` flag is more honest than a hallucinated value.

@@ -46,4 +46,9 @@ solution: |
   - Because the prompt says "output only the markdown … do not modify any files," you stay in control and can review before applying — a small but important guardrail.
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  Claude Code installed. Basic familiarity with Markdown (you're writing <code>.md</code> files). Completing <strong>Write your first CLAUDE.md</strong> first is helpful but not required.
+</div>
+
 **Why this matters:** Slash commands turn a prompt you keep retyping into a one-liner the whole team shares. The exam expects you to know that custom commands live as Markdown files in `.claude/commands/`, support arguments via `$ARGUMENTS`, and differ from Skills (which load automatically based on relevance rather than being explicitly invoked).

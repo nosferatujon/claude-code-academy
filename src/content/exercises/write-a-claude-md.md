@@ -97,4 +97,9 @@ solution: |
   - **Path-scoped rules save tokens.** Test conventions only load when editing test files.
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  Claude Code installed and working — complete <strong>Your first five minutes with Claude Code</strong> first if you haven't already. A project folder with at least a few files (any language).
+</div>
+
 **Why this matters:** The CLAUDE.md hierarchy is one of the most heavily tested topics on the exam. You need to know all four layers (user, project, directory, path-scoped), how `@import` works, and the syntax for `.claude/rules/` files with glob-based `paths:` frontmatter. This is the difference between re-explaining your project every session and having Claude already know exactly the right rules for the file it's editing.

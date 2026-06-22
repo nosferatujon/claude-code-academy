@@ -262,3 +262,5 @@ pre code { background: none; border: none; padding: 0; }
 .callout strong { display: block; margin-bottom: 0.3rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text); }
 .callout--api { border-left-color: var(--amber); }
 .callout--sdk { border-left-color: #9db4e0; }
+.callout--prereq { border-left-color: var(--green); }
+.callout--why { border-left-color: var(--accent); }

@@ -94,4 +94,9 @@ solution: |
   Forced tool_choice is also the recommended way to guarantee structured output: define your schema as a tool, force it with `tool_choice`, and the response is always a valid `tool_use` block matching your schema — never prose.
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  An Anthropic API key (this exercise uses the Claude API directly). Familiarity with JSON Schema basics — types, required fields, and enums. The <strong>Prompt Engineering — Advanced Patterns</strong> lesson covers the concepts this builds on.
+</div>
+
 **Why this matters:** `tool_choice` is a key knob in agentic workflows. The exam tests all three modes and the situations that call for each. The most commonly missed scenario is using forced `tool_choice` not because you need the tool's output, but because you need to guarantee the response shape — making it the reliable path to structured output from the API.

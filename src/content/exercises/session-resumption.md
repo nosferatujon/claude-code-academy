@@ -75,4 +75,9 @@ solution: |
   A prior session where Claude attempted five different approaches and failed at each is a liability, not an asset. The failed attempts bias the model toward the same dead ends. In this case, start fresh and open with a structured summary of what you tried and why it didn't work — this gives the model the signal without the noise.
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  Claude Code installed. A multi-step task you can start and return to — any project. Basic comfort running Claude Code interactively.
+</div>
+
 **Why this matters:** Session management is how you avoid losing work and control context quality in long-running tasks. The exam tests `--resume` syntax, the behavior of `fork_session`, and — critically — the judgment of when to resume vs start fresh. A session full of failed attempts can actively harm the next attempt; knowing when to discard that history is part of effective agentic workflow.

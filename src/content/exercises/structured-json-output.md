@@ -126,4 +126,9 @@ solution: |
   The retry message must be **specific** — vague feedback ("try again") rarely improves results. Telling the model exactly which field failed and why gives it the information it needs to correct the extraction.
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  Claude Code installed. Basic familiarity with JSON — you should recognize what a key-value pair, array, and object look like. No programming required for the first tier; Python is needed for the later tiers.
+</div>
+
 **Why this matters:** Structured output is how agents hand data to other programs. The exam expects you to know all three tiers: prompt-based (reliable but not guaranteed), tool_use with JSON Schema (structurally guaranteed by the API), and validation-retry loops for semantic errors. Nullable fields and forced tool_choice are the two most commonly tested implementation details.

@@ -6,6 +6,19 @@ minutes: 18
 summary: CLAUDE.md hierarchy, settings and permissions, slash commands, Agent Skills with frontmatter options, path-specific rules, plan mode, hooks, iterative refinement techniques, and using Claude Code in CI/CD.
 ---
 
+<div class="callout callout--why">
+  <strong>Why this matters</strong>
+  You open a project and ask Claude Code to "refactor all API routes to use async/await." It makes 30 file changes — but half touch auto-generated files you never edit by hand, and the formatting is completely wrong. You spend an hour undoing it. Now imagine Claude already knew which files were off-limits, what your formatting rules were, and which tests to run when it finishes. That's what this lesson builds.
+</div>
+
+## Learning objectives
+
+By the end of this lesson, you will be able to:
+
+- Set up CLAUDE.md so Claude always knows your project's conventions without you re-explaining them each session
+- Create slash commands, skills, and hooks to automate repeatable workflows
+- Run Claude Code headlessly in CI/CD pipelines with structured output
+
 ## What is Claude Code?
 
 **Claude Code** is a command-line tool (and IDE extension) that lets you work with Claude directly inside your codebase. Instead of copying and pasting code into a chat window, Claude Code can read your files, make edits, run commands, and work autonomously on tasks — all from your terminal or editor.

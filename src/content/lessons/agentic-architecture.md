@@ -6,6 +6,19 @@ minutes: 18
 summary: How agents are structured — single-agent loops, stop_reason mechanics, the Claude Agent SDK, the Task tool, multi-agent orchestration, task decomposition strategies, session management, and lifecycle hooks.
 ---
 
+<div class="callout callout--why">
+  <strong>Why this matters</strong>
+  You ask Claude Code to "add end-to-end tests for the checkout flow." Without any guidance from you, it reads the existing tests, identifies the checkout components, writes new tests, runs them, sees failures, reads the error output, fixes the implementation, and runs them again until they pass. You didn't direct each step — it just kept going. That's an agent. This lesson explains exactly how that loop works, and how to design multi-agent systems when one agent isn't enough.
+</div>
+
+## Learning objectives
+
+By the end of this lesson, you will be able to:
+
+- Explain the agentic loop and how `stop_reason` drives termination (not text parsing or iteration caps)
+- Design hub-and-spoke orchestration with correct task decomposition
+- Identify what the Claude Agent SDK requires to spawn subagents correctly
+
 ## What is an AI agent?
 
 An **agent** is an AI model that doesn't just answer a question and stop — it takes a sequence of actions to complete a goal. Instead of responding once, it can use tools (like reading files, running code, or browsing the web), observe what happened, and decide what to do next.

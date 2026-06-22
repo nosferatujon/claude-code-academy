@@ -104,4 +104,9 @@ solution: |
   | Cost sensitivity | High (50% savings) | Lower priority |
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  An Anthropic API key (this exercise uses the Claude API directly, not just the Claude Code CLI). Familiarity with reading API documentation. Read the <strong>Prompt Engineering — Advanced Patterns</strong> lesson first.
+</div>
+
 **Why this matters:** The Message Batches API is a significant cost lever, but only for the right workloads. The exam tests whether you can correctly identify batch-appropriate scenarios (latency-insensitive, high-volume), explain the trade-off (50% savings vs 24-hour window), and implement `custom_id` correlation for out-of-order results. Getting the scenario wrong — using batches for a blocking CI check — is a common distractor.

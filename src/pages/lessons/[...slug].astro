@@ -114,12 +114,13 @@ const progressPct = Math.round(((lessonIndex + 1) / lessonTotal) * 100);
       </nav>
 
       <!-- Cross-link to exercises -->
-      <p style="margin-top:1.5rem;font-size:0.88rem;color:var(--text-dim)">
-        Ready to practice?
-        <a href={`/exercises/#${lesson.data.domain}`}>
-          View exercises for {domainName(lesson.data.domain)} &rarr;
-        </a>
-      </p>
+      <div style="margin-top:2rem;padding:1.1rem 1.25rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+        <div>
+          <div style="font-weight:600;margin-bottom:0.2rem">Ready to practice?</div>
+          <div style="font-size:0.88rem;color:var(--text-dim)">Reinforce this lesson with hands-on exercises for {domainName(lesson.data.domain)}.</div>
+        </div>
+        <a class="btn" href={`/exercises/#${lesson.data.domain}`}>View exercises &rarr;</a>
+      </div>
 
     </div>
   </div>

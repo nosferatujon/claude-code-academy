@@ -117,4 +117,9 @@ solution: |
   Conflating these two — treating an empty result as an error — is a common agent bug that causes unnecessary retries and misleading error messages.
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  Completed <strong>Add and inspect an MCP server</strong>. Basic programming knowledge in any language (you'll be reading and modifying a small server). Node.js or Python installed.
+</div>
+
 **Why this matters:** Real-world MCP tools fail in many different ways, and how Claude handles those failures depends entirely on the structure you give the errors. The exam tests whether you can design error responses that enable the right behavior: retry transient failures, explain permission problems, flag validation issues as the caller's responsibility, and never treat a valid empty result as an error.

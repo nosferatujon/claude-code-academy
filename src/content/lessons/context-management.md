@@ -6,6 +6,19 @@ minutes: 16
 summary: Working within the context window, compaction risks, the lost-in-the-middle effect, verbose tool output, scratchpad files, multi-agent handoffs, error propagation, human review workflows, and information provenance.
 ---
 
+<div class="callout callout--why">
+  <strong>Why this matters</strong>
+  You ask Claude to refactor 50 files. By file 30, it starts making inconsistent changes — applying a pattern to some files but not others, even though you specified it at the start. The problem: the original instruction has been pushed out of context by all the file contents Claude read along the way. This lesson explains why context degrades in long tasks and how to prevent it.
+</div>
+
+## Learning objectives
+
+By the end of this lesson, you will be able to:
+
+- Keep the context window focused and prevent overflow from degrading long tasks
+- Design multi-agent handoffs that pass results, not raw transcripts
+- Build bounded retry and escalation patterns so agents fail safely rather than silently
+
 ## What is the context window?
 
 The **context window** is everything Claude can "see" at once — its working memory for a conversation. It includes:
@@ -15,6 +28,24 @@ The **context window** is everything Claude can "see" at once — its working me
 - Any examples or data you've provided
 
 The context window has a **fixed size limit** measured in tokens (roughly 1 token ≈ 1 word). Once you hit the limit, something has to give.
+
+```mermaid
+flowchart TD
+    subgraph CW["Context window — Claude's working memory for this session"]
+        SP["System prompt + CLAUDE.md\nyour project rules and instructions"]
+        MSG["Your messages\neverything you've typed in this session"]
+        TR["Tool results\nfile reads, command output, search results"]
+        CR["Claude's prior replies\nearlier responses in the conversation"]
+    end
+    LIM["⚠ Fixed size limit — once full,\nolder content is dropped or compacted"]
+    CW --> LIM
+    style CW fill:#1b1f2a,stroke:#3a4058
+    style SP fill:#252a38,stroke:#3a4058,color:#e6e8ee
+    style MSG fill:#252a38,stroke:#3a4058,color:#e6e8ee
+    style TR fill:#252a38,stroke:#3a4058,color:#e6e8ee
+    style CR fill:#252a38,stroke:#3a4058,color:#e6e8ee
+    style LIM fill:#2a2818,stroke:#d9a441,color:#e6e8ee
+```
 
 This domain is **15%** of the exam and focuses on keeping agents accurate and dependable as tasks grow long.
 

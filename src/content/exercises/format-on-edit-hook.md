@@ -47,4 +47,9 @@ solution: |
   The same pattern (a `PreToolUse` hook that exits non-zero) is how you *block* dangerous commands before they run.
 ---
 
+<div class="callout callout--prereq">
+  <strong>Prerequisites</strong>
+  Claude Code installed. A project where you can run a code formatter from the command line — for example, a Node.js project with <code>prettier</code> installed, or any project with a linter/formatter available.
+</div>
+
 **Why this matters:** Hooks are the exam's canonical answer to "how do I guarantee something happens around tool use?" Because they're executed by the harness rather than chosen by the model, they enforce non-negotiable behavior: formatting, secret scanning, or blocking destructive commands.

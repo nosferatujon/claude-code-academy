@@ -6,6 +6,19 @@ minutes: 17
 summary: What the Model Context Protocol is, its primitives (tools, resources, prompts), transports, MCP error handling, tool_choice, built-in tools, server scoping, and how to design good tool boundaries.
 ---
 
+<div class="callout callout--why">
+  <strong>Why this matters</strong>
+  Your team tracks everything in Jira. You want to ask Claude: "What are all the open bugs affecting the payment flow?" But Claude can't see Jira — it can only see what you paste in. So you export a CSV, paste it, ask again. It works, but it's manual and stale the moment you paste it. MCP is the standard that lets Claude connect directly to Jira, your database, or your internal docs — without you building a custom connector for every AI tool you use.
+</div>
+
+## Learning objectives
+
+By the end of this lesson, you will be able to:
+
+- Add and configure MCP servers in Claude Code at user scope (personal) and project scope (shared with your team)
+- Design single-purpose tools with clear descriptions and typed JSON Schema parameters
+- Return structured error responses (`isError`, `errorCategory`, `isRetryable`) that guide agents to recover correctly
+
 ## What is MCP?
 
 **MCP (Model Context Protocol)** is an open standard that defines how AI applications connect to external tools and data sources. It's the plumbing that lets Claude use tools beyond its built-in capabilities.
@@ -70,6 +83,28 @@ Exposing content catalogs as MCP resources is a useful optimization: instead of 
 Servers can also expose **prompt templates** — pre-written prompts that users or applications can invoke. These often surface as slash commands in Claude Code.
 
 **Example:** An MCP server for your codebase might expose a `/explain-function` prompt template that, when invoked, fills in the current function and asks Claude to explain it.
+
+**Tools vs. Resources at a glance:**
+
+```mermaid
+flowchart LR
+    subgraph T["Tools — actions"]
+        T1["`search_jira_issues(query)`"]
+        T2["`run_sql_query(sql)`"]
+        T3["`send_slack_message(text)`"]
+        TC["🤖 Model-controlled\nClaude decides when to call"]
+    end
+    subgraph R["Resources — data"]
+        R1["File contents"]
+        R2["Database record"]
+        R3["Document catalog"]
+        RC["👤 App/user-controlled\nLoaded into context directly"]
+    end
+    style T fill:#16271c,stroke:#5bbf7a
+    style TC fill:#0f1d14,stroke:#5bbf7a,color:#e6e8ee
+    style R fill:#252a38,stroke:#3a4058
+    style RC fill:#171a23,stroke:#3a4058,color:#e6e8ee
+```
 
 ## Transports — how client and server communicate
 
