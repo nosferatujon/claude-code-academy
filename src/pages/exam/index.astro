@@ -196,7 +196,7 @@ const poolByDomain = Object.fromEntries(
             `<p><strong>${escapeHtml(q.question)}</strong></p>` +
             skipped +
             opts +
-            `<div class="explain">${escapeHtml(q.explanation)}</div>` +
+            `<div class="explain"><strong>Answer:</strong> ${escapeHtml(q.options[q.answer])}<br>${escapeHtml(q.explanation)}</div>` +
             `</div>`
           );
         }).join('');
