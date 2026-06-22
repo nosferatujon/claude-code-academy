@@ -2,310 +2,310 @@
   {
     "id": "agentic-loop-order",
     "domain": "agentic",
-    "difficulty": "beginner",
-    "question": "What is the correct order of the core agentic loop?",
+    "difficulty": "intermediate",
+    "question": "Your agent is tasked with adding error handling to an API endpoint. Verbose logs show it reads routes/api/users.ts, immediately writes a modified version with error handling added, then discovers the edit broke the TypeScript interface defined in types/api.ts. It reads types/api.ts, rewrites routes/api/users.ts again to fix the type error, and finally runs the tests. What would have made the initial edit correct the first time?",
     "options": [
-      "Act → observe → gather context → decide",
-      "Gather context → decide → act → observe → repeat",
-      "Decide → gather context → observe → act",
-      "Observe → act → decide → gather context"
+      "Reading related files — including types/api.ts and any other dependencies — before deciding how to modify routes/api/users.ts, so type contracts inform the edit",
+      "Using Edit instead of Write, which validates type compatibility automatically before saving",
+      "Running the tests before making any edits to establish a type-safe baseline",
+      "Starting in plan mode to document the intended changes before executing"
     ],
-    "answer": 1,
-    "explanation": "An agent repeatedly gathers context, decides on the next action, acts (often a tool call), observes the result, and loops until done. Claude Code is a reference implementation of exactly this cycle."
+    "answer": 0,
+    "explanation": "The agentic loop's gather-context step must be comprehensive. By reading only the target file and acting immediately, the agent missed the interface contract in types/api.ts. A broader context-gathering pass — following imports and reading dependency files before deciding on the edit — would have surfaced the type constraint and produced a correct first-pass result."
   },
   {
     "id": "agentic-hub-spoke",
     "domain": "agentic",
     "difficulty": "intermediate",
-    "question": "In a hub-and-spoke (orchestrator–worker) topology, how do worker agents coordinate?",
+    "question": "You build a parallel research system where Worker A (company financials) and Worker B (market analysis) communicate directly — when Worker A finds a valuation metric, it passes it to Worker B for context. In production, when Worker A hits a rate limit and retries, those retries appear inside Worker B's context window, bloating it unpredictably. Debugging requires tracing execution across both workers simultaneously. What is the architectural root cause?",
     "options": [
-      "Workers broadcast to all other workers directly",
-      "Workers share a single global context window",
-      "All coordination flows through the central orchestrator; workers don't talk to each other",
-      "Workers coordinate via a shared database only"
+      "Worker A and B need larger context windows to buffer inter-worker messages cleanly",
+      "Direct worker-to-worker communication creates unpredictable context coupling. All coordination should flow through the orchestrator, which tracks state and handles recovery centrally without workers affecting each other's context",
+      "Worker A should catch its own rate limit errors before forwarding anything to Worker B",
+      "The orchestrator needs to run in a forked session to isolate itself from worker communication"
     ],
-    "answer": 2,
-    "explanation": "In hub-and-spoke, the orchestrator decomposes the goal, fans work to workers, and synthesizes results. Keeping all communication through the hub keeps paths simple (n instead of n²) and failures easy to localize."
+    "answer": 1,
+    "explanation": "Hub-and-spoke topology exists to prevent exactly this. When workers communicate directly, their contexts become coupled, failure modes compound, and there is no single place to observe or control system state. An orchestrator sees all outputs, handles Worker A's retry without Worker B being involved, and keeps each worker's context clean and isolated."
   },
   {
     "id": "agentic-single-vs-multi",
     "domain": "agentic",
     "difficulty": "intermediate",
-    "question": "When is a single-agent design generally preferable to multi-agent?",
+    "question": "You use a single Claude Code session to run three sequential security checks on a codebase: (1) authentication logic, (2) payment flow, (3) session management. After completing all three, the final session management report incorrectly flags a token rotation pattern as a vulnerability — the same pattern was explicitly cleared as safe during the authentication check. What caused this and how should the system be redesigned?",
     "options": [
-      "When the task is cohesive and doesn't need parallelism or context isolation",
-      "Always — multi-agent never helps",
-      "Only when there is no API access",
-      "When you want the highest possible token usage"
+      "The model updated its assessment based on new information in later files and legitimately changed its finding",
+      "The three checks should be run sequentially but with explicit 'clear prior findings' instructions between each",
+      "Three independent agent sessions — one per check — would prevent findings from one check leaking into another's reasoning, ensuring each evaluates only its own scope",
+      "A larger context window would hold all three checks without the contamination"
     ],
-    "answer": 0,
-    "explanation": "Single agents are simpler, more predictable, and cheaper. Reach for multi-agent specifically when work is parallelizable or you need to isolate context so one sub-task doesn't pollute another."
+    "answer": 2,
+    "explanation": "Context contamination — findings from Check 1 persisting and influencing Check 3 — is a primary reason to use separate agent sessions. Each check should run in an isolated context window seeing only the files and scope relevant to it. The single-session design allowed Check 1's 'safe' determination to bleed into Check 3, producing contradictory results."
   },
   {
     "id": "agentic-hooks-purpose",
     "domain": "agentic",
     "difficulty": "intermediate",
-    "question": "Why are lifecycle hooks the right mechanism for enforcing non-negotiable policy?",
+    "question": "Your team's policy requires scanning every file write for hardcoded credentials before it completes. You add a rule to CLAUDE.md: 'Before writing any file, check it for hardcoded API keys, passwords, or tokens.' During a late-night incident fix, Claude writes a config file containing a database password without scanning it first. Why did this happen and what would reliably prevent it?",
     "options": [
-      "They make the model more creative",
-      "They are executed by the harness, not chosen by the model, so they can't be skipped",
-      "They reduce the size of the context window automatically",
-      "They are the only way to call tools"
+      "The CLAUDE.md rule was ambiguous — list specific credential patterns to scan for",
+      "CLAUDE.md rules are followed probabilistically by the model and can be skipped when it prioritises task completion. A PreToolUse hook on the Write tool that blocks writes containing credential patterns runs deterministically in the harness and cannot be bypassed by the model",
+      "The rule should have been in the system prompt instead of CLAUDE.md for stronger enforcement",
+      "Hooks only work in interactive sessions — under incident conditions the model operates differently"
     ],
     "answer": 1,
-    "explanation": "Because hooks (PreToolUse, PostToolUse, Stop, etc.) run deterministically in the harness rather than being decided by the model, they're ideal for enforcing things like formatting, secret scanning, or blocking dangerous commands."
+    "explanation": "Model-followed instructions — CLAUDE.md, system prompt, few-shot examples — are probabilistic. Under pressure or when the model prioritises task completion, they can be skipped. Hooks run in the harness, not the model's reasoning. A PreToolUse hook that intercepts file writes and rejects those containing credential patterns is enforced deterministically regardless of context or urgency."
   },
   {
     "id": "agentic-subagent-return",
     "domain": "agentic",
-    "difficulty": "beginner",
-    "question": "When an orchestrator delegates to a sub-agent, what should return to the parent?",
+    "difficulty": "intermediate",
+    "question": "A competitive intelligence orchestrator spawns workers to research 8 companies. Each worker returns its complete working session: all tool calls, raw search results, intermediate notes, and a final summary — averaging 38,000 tokens per worker. After receiving 3 workers' results the orchestrator runs out of context and crashes. Extending the context limit gets you to 5 workers before the same crash. What is the correct fix?",
     "options": [
-      "The sub-agent's entire transcript and every tool result",
-      "Only the sub-agent's final, distilled result",
-      "Nothing — sub-agents can't return data",
-      "A copy of the parent's context"
+      "Cap each worker at a maximum of 5 tool calls to keep transcript length manageable",
+      "Workers should return only their final structured output — a defined schema with findings and sources — not their working session. The orchestrator needs conclusions, not transcripts",
+      "Run workers sequentially and discard each result after synthesising it before spawning the next",
+      "Use progressive summarisation on the orchestrator side to compress incoming worker results as they arrive"
     ],
     "answer": 1,
-    "explanation": "Sub-agents run in their own context window and return only their final result. Handing back results rather than full transcripts keeps the parent's context clean and prevents error/noise propagation."
+    "explanation": "Returning full working sessions is an anti-pattern regardless of context window size — it scales with worker count and always eventually fails. Workers should return only structured conclusions. This is the 'pass results not transcripts' principle: define a clear output contract, and the orchestrator stays clean regardless of how much exploratory work the worker did internally."
   },
   {
     "id": "prompting-json-reliability",
     "domain": "prompting",
-    "difficulty": "beginner",
-    "question": "Which combination most improves the reliability of JSON output from a prompt?",
+    "difficulty": "intermediate",
+    "question": "Your invoice processing pipeline calls Claude to extract data from scanned PDFs. In production 28% of responses are rejected by the validator: some include a preamble ('Here is the extracted data:'), some use string dosages ('10 mg') instead of the specified number type, and some omit the diagnosis_codes array when no diagnosis is present. What combination of changes most directly reduces all three failure modes?",
     "options": [
-      "Ask politely and hope for the best",
-      "Specify the exact schema, give one worked example, and instruct it to return only the JSON",
-      "Make the prompt as long as possible",
-      "Request the answer in prose, then convert it manually"
+      "Add a retry loop that resubmits failed extractions up to 3 times",
+      "Define a strict JSON schema specifying field names and types (number for dosages, nullable array for codes), provide a worked example showing the exact format including the empty-array case, and explicitly instruct 'return only the JSON object with no surrounding text'",
+      "Switch to a higher-tier model with stronger instruction-following",
+      "Use a post-processing step to strip preamble text and normalise types before validation"
     ],
     "answer": 1,
-    "explanation": "Precise schema (names, types, required/optional) + a concrete example + an explicit 'output only the object' instruction drive reliability. Over the API you can further force the shape with tool use / structured outputs."
+    "explanation": "Each failure mode has a direct prompt-layer fix. Preamble → 'return only the JSON object.' Wrong type → specify type: number in the schema. Missing field when absent → use a nullable field and show the empty case in the example. These are instructional failures, not model capability failures. Fix the prompt before adding retries or switching models."
   },
   {
     "id": "prompting-fewshot",
     "domain": "prompting",
-    "difficulty": "beginner",
-    "question": "What is the best practice for few-shot examples?",
+    "difficulty": "intermediate",
+    "question": "You deploy a contract clause classifier routing clauses to Legal, Finance, or Operations. After two weeks, 31% of Indemnification clauses are misrouted to Operations. Analysis shows these clauses frequently mention financial liability limits alongside legal obligations. Your current prompt has 2 examples, both single-domain clauses. What is the highest-leverage fix?",
     "options": [
-      "Use as many examples as possible regardless of relevance",
-      "Use 2–4 representative examples that cover the tricky/boundary cases",
-      "Only ever use a single example",
-      "Examples should use a different format than the desired output"
+      "Increase examples from 2 to 20, randomly sampled from historical contracts, to improve overall coverage",
+      "Add examples specifically showing Indemnification clauses — clauses that mention both financial liability and legal obligations — with the correct routing and brief reasoning for the decision",
+      "Add a confidence threshold: auto-route only when the model scores above 90%; send everything else to manual review",
+      "Switch to chain-of-thought prompting and instruct the model to reason through each clause's legal implications before classifying"
     ],
     "answer": 1,
-    "explanation": "A few well-chosen examples that cover edge cases and match the target format usually beat both prose rules and large numbers of redundant examples. The model imitates the pattern you show it."
+    "explanation": "The analysis identified the exact failure: Indemnification clauses with dual characteristics. Adding random examples is unlikely to address this unless they happen to include similar boundary cases. Adding examples that directly represent the failure pattern — showing why mixed-signal clauses route to Legal — is targeted and efficient."
   },
   {
     "id": "prompting-context-engineering",
     "domain": "prompting",
     "difficulty": "intermediate",
-    "question": "\"Context engineering\" primarily refers to:",
+    "question": "A developer asks Claude Code to fix a bug in the checkout flow. They paste the full 95,000-token codebase into context 'to ensure Claude has everything it needs.' Claude fixes the bug but also modifies a shared price-calculation utility used by 4 other modules, breaking them. Re-running tests reveals 11 failures unrelated to checkout. What most likely caused the unintended modifications?",
     "options": [
-      "Finding magic words that unlock hidden model abilities",
-      "Curating what goes into the context window — the right files, goal, constraints, and examples — while removing noise",
-      "Increasing the temperature setting",
-      "Writing prompts only in JSON"
+      "Claude found additional bugs in the utility and proactively fixed them — the test failures reveal pre-existing problems",
+      "Pasting the full codebase diluted Claude's scope awareness. With 95,000 tokens in context, the implicit boundary between 'files to fix' and 'files for reference' was lost, leading Claude to modify shared utilities it shouldn't have touched",
+      "The checkout bug fix was correct but triggered cascading failures in dependent modules due to tight coupling that already existed",
+      "A 95,000-token context exceeds Claude's reliable working range — the fix should be split across shorter sessions"
     ],
     "answer": 1,
-    "explanation": "Modern prompting is less about magic phrasing and more about putting the right information in the window and leaving noise out — giving the model what a capable new teammate would need."
+    "explanation": "This is the cost of context stuffing. With 95,000 tokens in the window, Claude's attention is spread across the entire codebase and implicit scope boundaries get lost. Providing only the checkout file and its direct dependencies — with an explicit scope constraint — keeps Claude focused and prevents well-intentioned but out-of-scope modifications."
   },
   {
     "id": "prompting-positive-instructions",
     "domain": "prompting",
-    "difficulty": "beginner",
-    "question": "Which instruction style does Claude generally follow most reliably?",
+    "difficulty": "intermediate",
+    "question": "Your meeting transcript summarisation prompt produces inconsistent output: sometimes bullet points, sometimes prose; sometimes speaker names are included, sometimes not; sometimes a 'Key Decisions' section appears, sometimes not. The current instructions read: 'Don't write long summaries. Don't include unnecessary details. Don't forget important decisions. Don't use an inconsistent format.' What change most reliably fixes the formatting inconsistency?",
     "options": [
-      "Vague, open-ended requests",
-      "Explicit, specific, positively framed instructions about goal, constraints, and format",
-      "Only negative instructions about what not to do",
-      "Instructions hidden in the middle of a long document"
+      "Repeat each instruction three times to emphasise its importance",
+      "Replace the negative instructions with a positive template: specify the exact output structure with named sections, define the format for each, and provide a complete worked example the model can imitate",
+      "Add 'Be consistent' as a final meta-instruction to the prompt",
+      "Set temperature to 0 to make the model more deterministic"
     ],
     "answer": 1,
-    "explanation": "Claude follows instructions literally, so being explicit and specific — stating the goal, constraints, and exact output format, framed positively — produces the most reliable results."
+    "explanation": "Negative instructions ('don't do X') define what to avoid but leave the target state ambiguous — there are infinitely many formats that aren't 'long' or 'inconsistent.' Positive instructions with a template and example define the exact target state. The model imitates a pattern it can see; it cannot reliably aim at a negative space it must infer."
   },
   {
     "id": "workflows-claudemd-vs-skill",
     "domain": "workflows",
     "difficulty": "intermediate",
-    "question": "What is the key difference between CLAUDE.md and an Agent Skill?",
+    "question": "A team's CLAUDE.md has grown to 4,200 tokens and contains: standard build/test commands (used every session), a 900-token Kubernetes deployment runbook (used monthly), a 600-token OWASP security checklist (used during security reviews), and a 400-token database migration guide (used when changing schema). Response quality is degrading. Which content should be moved out of CLAUDE.md and where should it go?",
     "options": [
-      "They are identical; the names are interchangeable",
-      "CLAUDE.md is loaded into context on every turn; a Skill's body loads on demand when a task matches it",
-      "Skills are always loaded; CLAUDE.md loads only when invoked",
-      "CLAUDE.md can only contain code, Skills only contain prose"
+      "All non-command content should move to a shared wiki; CLAUDE.md should contain only build/test commands",
+      "The deployment runbook, security checklist, and migration guide should become skills — they load on demand when a relevant task is detected, removing ~1,900 tokens from the every-turn context overhead",
+      "The Kubernetes runbook and migration guide should move to subdirectory CLAUDE.md files in the relevant directories",
+      "Compress all content to shorter phrasing to fit within a 2,000-token target"
     ],
     "answer": 1,
-    "explanation": "CLAUDE.md is always-loaded project memory (so keep it tight). Skills package expertise that is pulled into context only when relevant, letting you scale capabilities without bloating every turn."
+    "explanation": "CLAUDE.md loads on every single turn — even when you're doing routine editing with no deployment, security, or database work. Specialised runbooks and checklists for occasional tasks waste context budget constantly. Skills are designed exactly for this: they load only when the task matches their description. Moving the three specialised guides to skills eliminates ~1,900 tokens of every-turn overhead while keeping them accessible when actually needed."
   },
   {
     "id": "workflows-slash-location",
     "domain": "workflows",
-    "difficulty": "beginner",
-    "question": "Where do custom slash commands live, and how is the command named?",
+    "difficulty": "intermediate",
+    "question": "A senior developer creates a /security-audit slash command containing the team's security review checklist. She tests it on her machine — it works perfectly. The next day, three teammates on fresh clones of the repository report the command doesn't exist when they type it. Where did the command get saved, and what should change?",
     "options": [
-      "In CLAUDE.md, named by a heading",
-      "As Markdown files in .claude/commands/; the file name becomes the command",
-      "In package.json under \"commands\"",
-      "They can only be created by Anthropic"
+      "The command was saved to ~/.claude/commands/ — personal to her machine and never version-controlled. It should be saved to .claude/commands/ in the project repository so it's committed to git and available to everyone who clones the project",
+      "The command needs to be registered in .claude/settings.json before other team members can see it",
+      "Slash commands must be individually installed on each developer's machine using a CLI install command",
+      "The command file has a permissions issue on other machines — it needs to be made executable"
     ],
-    "answer": 1,
-    "explanation": "A file like .claude/commands/review.md becomes /review. Commands can take input via the $ARGUMENTS placeholder and, when committed, are shared with the whole team."
+    "answer": 0,
+    "explanation": "~/.claude/commands/ is user-scope: personal, machine-specific, never committed to git. .claude/commands/ in the project root is project-scope: committed to git, shared with the whole team via version control. Creating shared team commands in the user scope is the most common slash command sharing mistake."
   },
   {
     "id": "workflows-plan-mode",
     "domain": "workflows",
-    "difficulty": "beginner",
-    "question": "What does plan mode do?",
+    "difficulty": "intermediate",
+    "question": "You ask Claude Code to 'migrate the user service from REST to GraphQL — it touches about 30 files.' Claude immediately begins modifying resolvers, schema files, and the client layer. After 22 file edits, you realise it chose a schema structure you disagree with. Rolling back the partial migration and explaining the correct structure will take another 45 minutes. What should you have done at the start?",
     "options": [
-      "Automatically commits and pushes changes",
-      "Lets Claude research and propose an approach without making edits, so you can approve first",
-      "Disables all tools permanently",
-      "Runs the test suite in a loop"
+      "Broken the task into 5-file chunks so you could review each batch before Claude proceeded",
+      "Used plan mode so Claude would analyse the codebase and propose the migration approach — including schema decisions — before touching any files, letting you review and redirect the plan first",
+      "Provided a complete schema specification upfront before asking Claude to migrate",
+      "Started with direct execution but configured a pause after every 5 files to review"
     ],
     "answer": 1,
-    "explanation": "Plan mode is gather + decide with no act: Claude proposes a plan without editing, giving you a safety gate to review the approach before any changes happen — ideal for large or risky work."
+    "explanation": "Plan mode is designed for exactly this. For large multi-file changes with architectural decisions, Claude explores the codebase, proposes an approach, and surfaces its decisions — all without touching any files. You review the plan, correct the schema choice, and approve. Execution then follows the agreed plan. Plan mode prevents the 'partial migration to the wrong design' failure mode."
   },
   {
     "id": "workflows-settings-local",
     "domain": "workflows",
     "difficulty": "intermediate",
-    "question": "Which file holds personal, machine-specific overrides that should not be committed?",
+    "question": "A team lead wants to: (1) ensure all teammates can run 'npm test' and 'npm run lint' without permission prompts, (2) store her personal Anthropic API key so Claude Code can access it, and (3) set DEBUG_CLAUDE=verbose only on her machine for additional logging. Where should each item be configured?",
     "options": [
-      ".claude/settings.json",
-      ".claude/settings.local.json",
-      "CLAUDE.md",
-      ".claude/commands/local.md"
+      "API key and DEBUG_CLAUDE in .claude/settings.json; npm test and lint approvals in ~/.claude/settings.local.json",
+      "(1) permissions.allow in .claude/settings.json — committed, shared; (2) and (3) in ~/.claude/settings.local.json — git-ignored, personal",
+      "All three in CLAUDE.md so Claude Code has a single source to read",
+      "API key in a .env file; npm test approval and DEBUG_CLAUDE both in .claude/settings.json"
     ],
     "answer": 1,
-    "explanation": "settings.json holds shared, committed project configuration; settings.local.json holds personal overrides and is git-ignored. Both configure tools, permissions, env vars, and hooks."
+    "explanation": "settings.json is committed to git and shared — the right place for team-wide permission pre-approvals. settings.local.json is git-ignored and machine-specific — the right place for personal API keys and personal environment variables. Putting personal secrets in settings.json exposes them to the team via version control."
   },
   {
     "id": "workflows-cicd",
     "domain": "workflows",
     "difficulty": "intermediate",
-    "question": "How is Claude Code typically used in CI/CD pipelines?",
+    "question": "Your CI pipeline uses Claude Code to auto-triage new GitHub issues: categorising them, assigning priority, and adding labels. After deployment you discover it occasionally closes issues it marks as 'duplicates' and pings users in comments it shouldn't. You want to keep the triage behaviour but prevent these two specific actions. What is the most targeted fix?",
     "options": [
-      "It cannot run outside an interactive terminal",
-      "Headlessly via print mode (claude -p \"...\"), constrained by permission settings",
-      "By emailing prompts to Anthropic",
-      "Only through the web app"
+      "Replace Claude Code with a deterministic rule-based triage system to eliminate unpredictable behaviour",
+      "Add to the deny list in .claude/settings.json: block the specific Bash patterns and tool calls for closing issues and @-mentioning users. Permission settings enforce what Claude can and cannot do in headless mode at the tool level",
+      "Add instructions to the prompt: 'Never close issues. Never ping users in comments.' and re-deploy",
+      "Switch from headless mode to interactive mode so a human can approve each action before it executes"
     ],
     "answer": 1,
-    "explanation": "Print/headless mode lets Claude Code be scripted in pipelines (triage, fixes, reviews). Pair it with permission settings to constrain exactly what it may do in automation."
+    "explanation": "Deny lists in settings.json provide hard enforcement in headless/CI mode — operations are blocked at the tool level regardless of what the model decides. Prompt instructions are probabilistic and insufficient for preventing dangerous operations in an unattended pipeline. Interactive mode defeats the purpose of automation."
   },
   {
     "id": "mcp-architecture",
     "domain": "mcp",
     "difficulty": "beginner",
-    "question": "Which describes the MCP architecture?",
+    "question": "Your company builds a customer data MCP server that Claude Code uses to query customer records. Three months later, a partner team wants to use the same server from their MCP-compatible IDE (not Claude). Your manager says you'll need to rebuild the server for the other tool. Is your manager correct?",
     "options": [
-      "A host runs an MCP client that connects to one or more MCP servers exposing capabilities",
-      "Servers connect directly to each other with no client",
-      "It is a proprietary Anthropic-only API",
-      "It replaces the need for any tools"
+      "Yes — MCP servers are tightly coupled to the AI application they were built for",
+      "No — MCP is an open protocol. Any MCP-compatible client can connect to the same server regardless of which AI application it runs in",
+      "Partially — you'll need a compatibility layer, but the core server logic can be reused",
+      "Yes, but only because you use stdio transport; rebuilding with HTTP would make it shareable"
     ],
-    "answer": 0,
-    "explanation": "MCP is an open client–server standard. The host (e.g. Claude Code) runs a client that connects to servers — 'USB-C for AI tools': write a server once, use it from any MCP-compatible client."
+    "answer": 1,
+    "explanation": "MCP's design goal is exactly this interoperability. The server exposes a standard MCP interface; any MCP-compatible client connects to it. This is the 'write once, use anywhere' promise of the protocol — no rebuilding, no compatibility layers needed."
   },
   {
     "id": "mcp-primitives",
     "domain": "mcp",
     "difficulty": "intermediate",
-    "question": "What are the three primitives an MCP server can expose?",
+    "question": "You are designing an MCP server for an internal knowledge base. You need three capabilities: (1) full-text search that Claude triggers when answering a user question, (2) a topic catalogue that should automatically be in Claude's context without requiring a search call, and (3) a '/explain-topic' command users can invoke directly from Claude Code. Which combination of MCP primitives correctly maps to these three needs?",
     "options": [
-      "Models, tokens, and embeddings",
-      "Tools, resources, and prompts",
-      "Files, folders, and links",
-      "Agents, hooks, and commands"
+      "All three as tools — tools are the most flexible primitive and can serve all purposes",
+      "Tool for (1), resource for (2), prompt for (3) — each primitive is designed for its respective interaction pattern",
+      "Tool for (1) and (3), resource for (2) — prompts are optional and tools can substitute for them",
+      "Resource for all three — resources are the most efficient way to surface information to Claude"
     ],
     "answer": 1,
-    "explanation": "Tools are model-callable actions, resources are read-only data the server publishes, and prompts are reusable templates (often surfaced as slash commands)."
+    "explanation": "Each primitive is designed for a specific interaction pattern. Search triggered by Claude's reasoning → tool (model-controlled action). Topic catalogue that should always be in context → resource (server-published read-only data loaded by the application). User-invokable workflow surfaced as a slash command → prompt (reusable template for users). Forcing all three into tools works but loses the semantic and efficiency benefits of the right primitive for each."
   },
   {
     "id": "mcp-transports",
     "domain": "mcp",
     "difficulty": "intermediate",
-    "question": "Which transport is most appropriate for a local MCP server run as a subprocess?",
+    "question": "Your team built an MCP server wrapping a proprietary code analysis tool. It currently runs via stdio and works for one developer locally. You now need it to support: CI pipelines running in GitHub Actions and ten developers accessing it simultaneously from their own machines. What limitation will you hit, and what should you plan for?",
     "options": [
-      "HTTP / streamable HTTP",
-      "stdio",
-      "FTP",
-      "WebRTC"
+      "stdio has a 10-connection limit — you'll hit it when all ten developers connect at once",
+      "stdio runs as a local subprocess on a single machine and cannot be accessed remotely or by multiple users simultaneously. Migrating to HTTP transport is the right path — it supports remote access and concurrent connections from any machine",
+      "stdio performance degrades under load — switch to WebSocket for high-throughput scenarios",
+      "stdio only works on Unix systems — Windows developers on the team will need a different transport"
     ],
     "answer": 1,
-    "explanation": "stdio runs the server as a local subprocess and communicates over stdin/stdout — ideal for local tools. HTTP (streamable) suits remote, hosted, or multi-user servers."
+    "explanation": "stdio requires the server to run as a subprocess on the same machine as the client — fundamentally incompatible with remote access or simultaneous multi-user connections. HTTP transport is designed for exactly this: a single centrally deployed server serving multiple concurrent clients over the network."
   },
   {
     "id": "mcp-tool-design",
     "domain": "mcp",
-    "difficulty": "advanced",
-    "question": "Which is a hallmark of good MCP tool design?",
+    "difficulty": "intermediate",
+    "question": "Your MCP server exposes a manage_database(operation, table, data, options) tool. Production logs show the agent frequently passes invalid operation values (e.g. 'DELETE_ALL' instead of 'delete'), omits required fields for specific operations, and calls it for read operations when a safer read-only tool exists. This causes 23% of tool calls to return validation errors. What is the primary design fix?",
     "options": [
-      "One giant tool that does everything",
-      "Single-purpose tools with clear descriptions, typed inputs, helpful errors, and least privilege",
-      "Tools with no descriptions to save tokens",
-      "Always granting full system access for flexibility"
+      "Expand the tool description to enumerate all valid operation values, required fields per operation, and when to use manage_database vs the read tool",
+      "Split manage_database into single-purpose tools: read_records, create_record, update_record, delete_record — each with minimal clear parameters so the model cannot conflate read and write operations",
+      "Add an enum constraint to the operation parameter in the JSON schema to prevent invalid values",
+      "Add more few-shot examples in the system prompt showing correct tool call patterns"
     ],
     "answer": 1,
-    "explanation": "A tool should do one clear thing, with a description written for the model (its only guide to when to use it), a typed JSON schema for inputs, actionable error messages, and least-privilege access."
+    "explanation": "A tool that handles many operations through a type parameter creates selection errors, per-operation configuration errors, and scope creep. Single-purpose tools eliminate these error classes: each has exactly the parameters it needs, the model cannot confuse read and write, and the right tool for each job is unambiguous. This is the 'right granularity' principle of good tool design."
   },
   {
     "id": "context-budget",
     "domain": "context",
-    "difficulty": "beginner",
-    "question": "Why is the context window described as a 'budget'?",
+    "difficulty": "intermediate",
+    "question": "After 90 minutes of a complex codebase refactoring session, Claude starts making recommendations that contradict decisions made earlier — for example, it suggests adding a global state manager after explicitly agreeing 40 minutes ago to avoid one. The session has been running continuously without a reset. What is the most likely cause?",
     "options": [
-      "It costs money per token only at night",
-      "Everything the model can see shares one finite window, so noise causes overflow or distraction",
-      "It resets only once per month",
-      "It is unlimited but slow"
+      "Claude updated its analysis based on new files found later in the session and legitimately changed its recommendation",
+      "The context window is filling up and earlier turns — including the architectural decision against global state — are being compacted or dropped, leaving Claude without access to those constraints",
+      "Claude has a built-in 60-minute soft reset that periodically re-evaluates architectural recommendations",
+      "The recommendation is correct — the earlier constraint may have been based on incomplete information at the time"
     ],
     "answer": 1,
-    "explanation": "System prompt, CLAUDE.md, conversation, and tool results all share one finite window. Too much content causes overflow (truncation) and even irrelevant content causes distraction/rot, degrading quality."
+    "explanation": "Long sessions accumulate tool results, file contents, and conversation turns that fill the context window. When it approaches capacity, earlier content is compacted or truncated. Critical constraints established early in a session can disappear from accessible context, causing Claude to revisit settled decisions. Durable architectural decisions should be written to CLAUDE.md or a scratchpad file so they survive compaction."
   },
   {
     "id": "context-compaction",
     "domain": "context",
     "difficulty": "intermediate",
-    "question": "What's a good practice so important facts survive conversation compaction?",
+    "question": "A 3-hour infrastructure migration session was going well. In the first hour, Claude identified a critical constraint: a specific third-party library doesn't support async initialisation, so all init code must be synchronous. Two hours later, Claude starts writing async init code for a new service. The session was never reset. What happened and what would have prevented it?",
     "options": [
-      "Repeat them in every message",
-      "Persist durable facts to files like CLAUDE.md rather than relying on the live transcript",
-      "Never start long conversations",
-      "Disable compaction entirely"
+      "Claude reconsidered the constraint after reading new library documentation — it may now support async",
+      "The constraint lived only in the conversation transcript, which was partially compacted as the session grew. Writing constraints like this to CLAUDE.md or a scratchpad file at the moment of discovery would have ensured they persisted across compaction",
+      "This is a known two-hour memory limit — plan sessions so critical work completes within the first 90 minutes",
+      "The migration should have been split into separate sessions, one per service, to prevent context growth"
     ],
     "answer": 1,
-    "explanation": "Compaction summarizes earlier turns to save space. Durable facts stored in CLAUDE.md or files survive compaction, whereas details left only in the raw transcript may be summarized away."
+    "explanation": "Compaction summarises older turns into shorter representations. A specific technical constraint like 'library X does not support async init' is exactly the kind of precise, actionable fact that compaction loses in favour of general narrative. The fix is to externalise durable constraints to files at the moment they are discovered — not rely on the conversation transcript to preserve them indefinitely."
   },
   {
     "id": "context-handoffs",
     "domain": "context",
     "difficulty": "intermediate",
-    "question": "What should a sub-agent return on a multi-agent handoff?",
+    "question": "A data analysis orchestrator spawns a worker to process Q3 sales data. The worker reads 47 CSV files, performs calculations, creates 12 intermediate data frames, and returns its complete working session — every read, every calculation step, every note — totalling 52,000 tokens. The orchestrator crashes on receipt. After extending its context limit it works, but synthesis takes 3x longer as it sifts through process noise. What is the correct fix?",
     "options": [
-      "Its entire transcript so nothing is lost",
-      "Only its distilled result, per a clear contract — not its full transcript",
-      "A request for more tokens",
-      "The orchestrator's original prompt"
+      "Split the Q3 processing across 3 workers so each returns a smaller transcript",
+      "Define a clear output contract: the worker returns only structured results (totals, trends, anomalies) — not its working session. Process detail stays inside the worker's context and never reaches the orchestrator",
+      "Increase the orchestrator's context window until it can reliably handle full worker transcripts",
+      "Have the worker summarise its transcript to 10,000 tokens before returning rather than the full 52,000"
     ],
     "answer": 1,
-    "explanation": "Hand off results, not transcripts. Returning only the conclusion (with a defined input/output contract) keeps the orchestrator's context clean and prevents noise and errors from propagating."
+    "explanation": "The orchestrator needs the conclusion of the sub-task, not a record of how it was reached. Defining a contract — worker returns structured output, not transcript — is the fix regardless of context window size. A structured output with totals, top products, and anomalies is all the orchestrator needs to synthesise. This is the 'pass results not transcripts' principle."
   },
   {
     "id": "context-escalation",
     "domain": "context",
     "difficulty": "intermediate",
-    "question": "Which is a sound reliability pattern when an agent hits a failure?",
+    "question": "Your autonomous procurement agent processes purchase requests. Processing a $180,000 equipment order, it cannot find the vendor in the approved vendor database. Rather than stopping, it searches for similar vendors, finds one with a similar name, assumes it's the same company, and processes the order. The payment goes to the wrong company. Which behavioural design pattern would have prevented this?",
     "options": [
-      "Retry forever until it works",
-      "Silently ignore the error and continue",
-      "Bounded retries for transient errors, then escalate when stuck or blocked",
-      "Immediately delete the project"
+      "More aggressive fuzzy matching — a 95% name-similarity threshold would have caught the discrepancy",
+      "An escalation rule: when a required validation step cannot be completed with certainty, pause and route to a human approver rather than inferring or using approximate matches on financial transactions",
+      "A retry loop that queries the vendor database 3 times before treating the lookup as failed",
+      "A confidence threshold: only auto-approve orders where all fields match at 99%+ confidence"
     ],
-    "answer": 2,
-    "explanation": "Fail loud, retry transient failures a bounded number of times, then escalate to a human or higher-level agent when blocked or facing unresolved ambiguity — never loop forever or guess destructively."
+    "answer": 1,
+    "explanation": "The agent guessed destructively when it could not complete a required step — a core failure mode of autonomous agents. The fix is an escalation rule that recognises the boundary: 'vendor not found in approved database' is not an inference opportunity, it is a hard stop requiring human review. Confidence thresholds and retry logic do not address the root issue: the correct response to 'vendor unverifiable' is to stop and escalate, not find an approximate answer."
   },
   {
     "id": "agentic-tool-ordering",
@@ -316,7 +316,7 @@
       "Add a programmatic prerequisite that blocks lookup_order and process_refund calls until get_customer has returned a verified customer ID.",
       "Enhance the system prompt to state that customer verification via get_customer is mandatory before any order operations.",
       "Add few-shot examples showing the agent always calling get_customer first, even when customers volunteer order details.",
-      "Implement a routing classifier that analyzes each request and enables only the subset of tools appropriate for that request type."
+      "Implement a routing classifier that analyses each request and enables only the subset of tools appropriate for that request type."
     ],
     "answer": 0,
     "explanation": "When a specific tool sequence is required for critical business logic, programmatic enforcement provides deterministic guarantees that prompt-based approaches cannot. Options B and C rely on probabilistic LLM compliance, which is insufficient when errors have financial consequences. Option D addresses tool availability rather than tool ordering."
@@ -347,7 +347,7 @@
       "Implement sentiment analysis to detect customer frustration levels and automatically escalate when negative sentiment exceeds a threshold."
     ],
     "answer": 0,
-    "explanation": "Adding explicit escalation criteria with few-shot examples directly addresses the root cause: unclear decision boundaries. Option B fails because LLM self-reported confidence is poorly calibrated. Option C is over-engineered when prompt optimization hasn't been tried. Option D solves a different problem — sentiment doesn't correlate with case complexity."
+    "explanation": "Adding explicit escalation criteria with few-shot examples directly addresses the root cause: unclear decision boundaries. Option B fails because LLM self-reported confidence is poorly calibrated. Option C is over-engineered when prompt optimisation hasn't been tried. Option D solves a different problem — sentiment doesn't correlate with case complexity."
   },
   {
     "id": "workflows-slash-command-scope",
@@ -403,7 +403,7 @@
       "The document analysis agent is filtering out sources related to non-visual creative industries due to overly restrictive relevance criteria."
     ],
     "answer": 1,
-    "explanation": "The coordinator's logs reveal the root cause directly: it decomposed \"creative industries\" into only visual arts subtasks, completely omitting music, writing, and film. The subagents executed their assigned tasks correctly — the problem is what they were assigned. Options A, C, and D incorrectly blame downstream agents."
+    "explanation": "The coordinator's logs reveal the root cause directly: it decomposed 'creative industries' into only visual arts subtasks, completely omitting music, writing, and film. The subagents executed their assigned tasks correctly — the problem is what they were assigned. Options A, C, and D incorrectly blame downstream agents."
   },
   {
     "id": "context-structured-error",
@@ -467,7 +467,7 @@
     "difficulty": "advanced",
     "question": "A PR modifies 14 files. Your single-pass review produces inconsistent results: detailed feedback for some files, superficial for others, obvious bugs missed, and contradictory feedback flagging a pattern in one file while approving identical code elsewhere. How should you restructure?",
     "options": [
-      "Split into focused passes: analyze each file individually for local issues, then run a separate integration-focused pass examining cross-file data flow.",
+      "Split into focused passes: analyse each file individually for local issues, then run a separate integration-focused pass examining cross-file data flow.",
       "Require developers to split large PRs into smaller submissions of 3-4 files before the automated review runs.",
       "Switch to a higher-tier model with a larger context window to give all 14 files adequate attention in one pass.",
       "Run three independent review passes on the full PR and only flag issues that appear in at least two of the three runs."
@@ -479,29 +479,29 @@
     "id": "agentic-stop-reason",
     "domain": "agentic",
     "difficulty": "intermediate",
-    "question": "An agentic loop checks the API response's stop_reason field. The value is \"tool_use\". What should the loop do next?",
+    "question": "You are debugging an SDK-based customer service agent. Logs show it correctly calls get_customer (stop_reason: tool_use), but instead of continuing the loop it immediately returns the raw tool result to the user as the final response. Users see internal customer data fields rather than a helpful answer. What is the bug?",
     "options": [
-      "Terminate — the agent has finished its task",
-      "Execute the requested tool call(s) and send the results back to continue the loop",
-      "Retry the same request with a higher temperature",
-      "Summarize the conversation and start a new session"
+      "The loop is exiting on tool_use instead of continuing. After executing a tool call the loop must append the result to the conversation and call the API again — only end_turn signals the response is ready to return to the user",
+      "The tool is returning too much data — filter the customer fields before they reach the agent",
+      "The agent needs a system prompt instruction not to share raw tool results with users",
+      "The tool result should be formatted as a user-facing message before being added to the conversation"
     ],
-    "answer": 1,
-    "explanation": "A stop_reason of \"tool_use\" means the model has requested one or more tool calls. The loop must execute those calls, collect their results, and send them back so the model can continue. Only \"end_turn\" (or similar terminal values) signals completion."
+    "answer": 0,
+    "explanation": "stop_reason: tool_use means the model wants to continue — execute the tool and loop back. The bug is treating a tool_use response as terminal: the loop should append the tool result and call the API again. Only end_turn signals that the model's response is complete and ready for the user. Returning the raw tool result without looping back skips the model's synthesis step entirely."
   },
   {
     "id": "agentic-end-turn-stop-reason",
     "domain": "agentic",
-    "difficulty": "beginner",
-    "question": "An agentic loop receives a response with stop_reason: \"end_turn\" and no tool_use blocks. What should the loop do?",
+    "difficulty": "intermediate",
+    "question": "You are building a coding assistant with the Claude Agent SDK. A user asks Claude to explain a function. The API response contains only a text block explaining the function — no tool_use blocks, stop_reason is 'end_turn'. A teammate suggests also checking whether the text contains the phrase 'I need to look at' to detect when Claude wants to read more files. Why is this a bad idea?",
     "options": [
-      "Send the response back to the model for verification before stopping",
-      "Terminate the loop — the model has finished generating its response",
-      "Check for pending tool results and continue the loop",
-      "Switch to a higher-temperature sampling mode to generate more content"
+      "Natural language phrases in assistant text are not a reliable signal for loop control. stop_reason is the authoritative structured signal: 'end_turn' means the response is complete. Parsing text for intent phrases is fragile and breaks when phrasing varies",
+      "The phrase 'I need to look at' never appears in Claude's responses — it would always evaluate false",
+      "Text parsing works for simple cases but requires a more sophisticated NLP parser for production use",
+      "The check is valid but should use regex rather than string matching for robustness"
     ],
-    "answer": 1,
-    "explanation": "\"end_turn\" means the model has completed its response naturally. There are no pending tool calls. The loop should terminate and return the result. Sending it back (A) causes an unnecessary round trip. There are no pending tools (C) to process."
+    "answer": 0,
+    "explanation": "The loop spec is clear: use stop_reason for loop control, not text content. 'end_turn' means Claude has finished; 'tool_use' means it needs tools executed. Parsing natural language phrases is fragile — phrasing varies, and the phrase might appear in explanatory context rather than as a control signal. stop_reason is structured precisely so you don't need to parse text."
   },
   {
     "id": "agentic-subagent-context",
@@ -599,7 +599,7 @@
       "A coding assistant that dynamically decides which files to read based on the developer's question"
     ],
     "answer": 1,
-    "explanation": "Pipelines are appropriate when the sequence of operations is known and fixed. Document processing with defined stages (extract → validate → format) is inherently sequential and predictable. The other options involve dynamic, event-driven, or exploratory behavior better suited to reactive agents."
+    "explanation": "Pipelines are appropriate when the sequence of operations is known and fixed. Document processing with defined stages (extract → validate → format) is inherently sequential and predictable. The other options involve dynamic, event-driven, or exploratory behaviour better suited to reactive agents."
   },
   {
     "id": "agentic-irreversible-actions",
@@ -607,7 +607,7 @@
     "difficulty": "intermediate",
     "question": "Before executing a database migration that will delete 10,000 records, what should a well-designed agent do?",
     "options": [
-      "Execute immediately to minimize the time the system is in a transitional state",
+      "Execute immediately to minimise the time the system is in a transitional state",
       "Pause and require explicit human confirmation before performing the irreversible action",
       "Create a backup, then proceed automatically without interruption",
       "Check if the records are referenced elsewhere, then delete them without confirmation if no references are found"
@@ -627,7 +627,7 @@
       "Review every 100th record in sequential order to maintain a fixed 1% review rate"
     ],
     "answer": 2,
-    "explanation": "Stratified sampling ensures coverage across output types (not just sequential samples), while prioritizing high-stakes decisions that warrant extra scrutiny. Reviewing only flagged cases (A) misses errors the agent doesn't recognize as errors. Eliminating review (B) removes the feedback loop needed to catch distributional drift."
+    "explanation": "Stratified sampling ensures coverage across output types (not just sequential samples), while prioritising high-stakes decisions that warrant extra scrutiny. Reviewing only flagged cases (A) misses errors the agent doesn't recognise as errors. Eliminating review (B) removes the feedback loop needed to catch distributional drift."
   },
   {
     "id": "workflows-prompt-chaining",
@@ -665,7 +665,7 @@
     "options": [
       "The model overheats after many requests; add a cooling-off delay between reviews",
       "Reviews share a session so earlier PR context bleeds into later ones; use fresh session isolation for each PR review",
-      "The --output-format flag changes between runs; standardize it to json",
+      "The --output-format flag changes between runs; standardise it to json",
       "The model's context window fills with code and it stops reading new PRs; increase the context window size"
     ],
     "answer": 1,
@@ -675,15 +675,15 @@
     "id": "workflows-grep-vs-glob",
     "domain": "workflows",
     "difficulty": "beginner",
-    "question": "You need to find all TypeScript files in a project. Which built-in tool is most appropriate?",
+    "question": "An agent needs to perform two tasks: (1) find all files in the project that import 'lodash', and (2) find all TypeScript test files ending in .test.ts. Which tools should the agent use for each task respectively?",
     "options": [
-      "Grep with pattern '*.ts' to search for TypeScript file references",
-      "Glob with pattern '**/*.ts' to match file paths directly",
-      "Read to open each directory and inspect its contents",
-      "Edit with a search expression to locate TypeScript files"
+      "Grep for both — Grep searches file contents and can also match file paths",
+      "Grep for (1) because it searches file contents for the import statement; Glob for (2) because it matches files by path pattern",
+      "Glob for both — Glob finds files whether by name or by their contents",
+      "Bash with find commands for both — the built-in tools are not capable of these tasks"
     ],
     "answer": 1,
-    "explanation": "Glob matches file paths against patterns — it's the right tool for finding files by name or extension. Grep searches file contents for a pattern, not file paths. Read opens a specific known file. Edit modifies files."
+    "explanation": "Grep searches file contents for a pattern — ideal for finding import statements or any text inside files. Glob matches file paths against a pattern — ideal for finding files by name or extension. These are complementary tools with distinct use cases. Using Grep for path matching or Glob for content searching misuses both."
   },
   {
     "id": "workflows-edit-vs-write",
@@ -750,7 +750,7 @@
       "Include a rule in CLAUDE.md saying 'never push directly to main'",
       "Configure a PreToolUse hook that intercepts Bash tool calls and blocks commands matching 'git push.*main'",
       "Add a few-shot example to the system prompt showing Claude refusing to push to main",
-      "Set the model's temperature to 0 to make its behavior more predictable"
+      "Set the model's temperature to 0 to make its behaviour more predictable"
     ],
     "answer": 1,
     "explanation": "A PreToolUse hook runs deterministically in the harness before any tool call executes, providing hard enforcement that cannot be bypassed by the model. CLAUDE.md instructions and few-shot examples are probabilistic. Temperature affects randomness, not policy compliance."
@@ -791,7 +791,7 @@
     "options": [
       "Treat it as a successful response and pass it to the next step",
       "Crash the agent immediately to prevent further damage",
-      "Recognize it as a tool-level error and decide whether to retry, use an alternative tool, or surface the error to the user",
+      "Recognise it as a tool-level error and decide whether to retry, use an alternative tool, or surface the error to the user",
       "Discard the result silently and continue without mentioning the failure"
     ],
     "answer": 2,
@@ -801,7 +801,7 @@
     "id": "mcp-error-categories",
     "domain": "mcp",
     "difficulty": "advanced",
-    "question": "A tool result includes `{\"isError\": true, \"errorType\": \"transient\", \"isRetryable\": true}`. What is the correct agent behavior?",
+    "question": "A tool result includes `{\"isError\": true, \"errorType\": \"transient\", \"isRetryable\": true}`. What is the correct agent behaviour?",
     "options": [
       "Abort the entire workflow — any error indicates a fundamental problem",
       "Retry the tool call with bounded attempts using exponential backoff, then escalate if still failing",
@@ -815,7 +815,7 @@
     "id": "mcp-validation-error",
     "domain": "mcp",
     "difficulty": "advanced",
-    "question": "A tool returns `{\"isError\": true, \"errorType\": \"validation\", \"isRetryable\": false, \"message\": \"email field must be RFC 5321 compliant\"}`. What is the correct agent behavior?",
+    "question": "A tool returns `{\"isError\": true, \"errorType\": \"validation\", \"isRetryable\": false, \"message\": \"email field must be RFC 5321 compliant\"}`. What is the correct agent behaviour?",
     "options": [
       "Retry with exponential backoff — validation errors often resolve on their own",
       "Escalate to a human immediately without attempting to fix the input",
@@ -823,7 +823,7 @@
       "Mark the record as failed and continue processing other records without attempting a fix"
     ],
     "answer": 2,
-    "explanation": "A validation error with isRetryable: false means the current input is invalid — retrying the same input (A) won't help. But the error message tells the agent exactly what's wrong, so it can correct the input and retry with valid data. Immediate escalation (B) and silent failure (D) waste recoverable opportunities."
+    "explanation": "A validation error with isRetryable: false means the current input is invalid — retrying the same input won't help. But the error message tells the agent exactly what is wrong, so it can correct the input and retry with valid data. Immediate escalation (B) and silent failure (D) waste recoverable opportunities."
   },
   {
     "id": "mcp-tool-choice",
@@ -843,11 +843,11 @@
     "id": "mcp-too-many-tools",
     "domain": "mcp",
     "difficulty": "intermediate",
-    "question": "A developer adds 40 tools to an agent's tool list to maximize its capabilities. What is the most likely consequence?",
+    "question": "A developer adds 40 tools to an agent's tool list to maximise its capabilities. What is the most likely consequence?",
     "options": [
       "Performance improves because the agent has more options to choose from",
       "Tool selection reliability degrades as the model struggles to differentiate between many similar-sounding tools",
-      "The agent automatically organizes the tools into categories for efficient selection",
+      "The agent automatically organises the tools into categories for efficient selection",
       "There is no effect since the model ignores tools it doesn't need"
     ],
     "answer": 1,
@@ -885,7 +885,7 @@
     "id": "mcp-http-transport",
     "domain": "mcp",
     "difficulty": "intermediate",
-    "question": "Your organization wants to deploy an MCP server that multiple teams access simultaneously from different machines. Which transport is most appropriate?",
+    "question": "Your organisation wants to deploy an MCP server that multiple teams access simultaneously from different machines. Which transport is most appropriate?",
     "options": [
       "stdio — it's the simplest and works for all use cases",
       "Streamable HTTP — it supports remote access, multiple concurrent clients, and network deployment",
@@ -913,57 +913,57 @@
     "id": "mcp-prompt-primitive",
     "domain": "mcp",
     "difficulty": "intermediate",
-    "question": "An MCP server exposes a 'summarize_document' prompt primitive. How does this differ from a 'summarize_document' tool?",
+    "question": "You are building an MCP server for your coding standards. You need two capabilities: (1) Claude should programmatically check compliance during its own code analysis, and (2) users should be able to type '/code-review' in Claude Code to trigger a standards review. Which MCP primitives correctly serve these two different interaction patterns?",
     "options": [
-      "Prompts are executed server-side; tools are executed client-side",
-      "Prompts are reusable message templates surfaced to users (e.g., as slash commands); tools are model-callable functions that perform actions",
-      "Tools are read-only; prompts can modify server state",
-      "Prompts support only text input; tools support any data type"
+      "Two tools — tools can serve both model-initiated and user-initiated flows",
+      "A tool for (1) and a prompt for (2) — tools are model-callable actions; prompts are reusable templates surfaced to users as slash commands",
+      "A resource for (1) so standards are always in context, and a tool for (2)",
+      "A single prompt for both — prompts are more flexible and can serve both model and user interactions"
     ],
     "answer": 1,
-    "explanation": "MCP prompts are pre-built message templates designed for direct user consumption, often surfaced as slash commands. Tools are callable functions the model invokes programmatically during its reasoning. They serve different interaction patterns: prompts for user-initiated flows, tools for model-initiated actions."
+    "explanation": "The key distinction is who initiates the interaction. Actions the model takes autonomously during its reasoning → tool (model-controlled). User-invoked workflows surfaced as slash commands → prompt (designed to be composed into conversations by users or client applications). These are different interaction patterns served by different primitives."
   },
   {
     "id": "context-claudemd-hierarchy",
     "domain": "context",
     "difficulty": "intermediate",
-    "question": "A developer has a CLAUDE.md in their home directory, one at the project root, and one in a subdirectory they're working in. In what order do these files apply?",
+    "question": "A developer added a rule to the team's project-root CLAUDE.md: 'Always use async/await, never callbacks.' Her personal ~/.claude/CLAUDE.md says: 'Match the existing code style of the file you are editing.' She is working in a legacy directory that uses callbacks throughout. Claude keeps writing callback-style code. Which rule is it following and why?",
     "options": [
-      "Only the project root CLAUDE.md is used; the others are ignored",
-      "User-level first, then project root, then subdirectory — later files can extend or override earlier ones",
-      "The subdirectory CLAUDE.md overrides all others; only it is read",
-      "All three are merged randomly with no defined precedence"
+      "The team CLAUDE.md rule — it is committed to the repository and takes precedence over personal preferences",
+      "The personal ~/.claude/CLAUDE.md rule — user-level files load first and establish the baseline. The 'match existing style' directive points Claude at the callback patterns observable in the legacy files, effectively overriding the async/await rule",
+      "Neither — subdirectory CLAUDE.md files override all parent files when working in that directory",
+      "Whichever CLAUDE.md was most recently modified takes precedence"
     ],
     "answer": 1,
-    "explanation": "CLAUDE.md files follow a hierarchical loading order: user (~/.claude/CLAUDE.md), then project root, then the current working directory and its parents. Each layer can add to or override settings from the previous layer."
+    "explanation": "CLAUDE.md files load hierarchically: user-level (~/.claude/CLAUDE.md) first, then project root, then subdirectories — all active simultaneously. The personal rule 'match the existing code style' instructs Claude to mirror the callback patterns present in the legacy code, which then overrides the async/await directive in practice. Use /memory to see which files are loaded and diagnose which rule is winning."
   },
   {
     "id": "context-import-syntax",
     "domain": "context",
     "difficulty": "intermediate",
-    "question": "You want your project's CLAUDE.md to include shared security policies maintained in a separate file. Which syntax accomplishes this?",
+    "question": "Your team maintains separate files: api-contracts.md, testing-standards.md, and security-policies.md. The project CLAUDE.md is getting long because all three are copied in full. A developer proposes placing three separate CLAUDE.md files in subdirectories instead. What is a better approach that keeps conventions in separate maintainable files without bloating the root CLAUDE.md?",
     "options": [
-      "{{include: security-policies.md}}",
-      "@import security-policies.md",
-      "#include ./security-policies.md",
-      "<!-- @load security-policies.md -->"
+      "Move the conventions to skills so they load on demand when relevant tasks are detected",
+      "Use @import directives in the root CLAUDE.md to reference the three files by path — they stay separate and maintainable, the root file stays concise, and updates to any convention file are picked up automatically",
+      "Use {{include}} syntax to inline the files at load time",
+      "Copy content into CLAUDE.md but use HTML comments to mark each section for easier future extraction"
     ],
     "answer": 1,
-    "explanation": "The @import syntax in CLAUDE.md pulls in the contents of another file at load time. This lets you compose modular documentation without duplicating content, and shared files can be updated independently."
+    "explanation": "@import in CLAUDE.md resolves relative file paths at load time, pulling in the referenced file's content. Convention files can be updated independently — the root CLAUDE.md @import reference automatically picks up changes. This is the designed way to compose modular CLAUDE.md content without duplication."
   },
   {
     "id": "context-claudemd-size",
     "domain": "context",
-    "difficulty": "beginner",
-    "question": "Why should CLAUDE.md be kept concise rather than including every possible piece of project information?",
+    "difficulty": "intermediate",
+    "question": "A team's root CLAUDE.md is 3,800 tokens. Over an 8-turn bug fix conversation, this means roughly 30,400 tokens are spent on CLAUDE.md injection alone. A teammate argues this is fine because 'Claude needs all that context.' What is the problem with this reasoning, and what should guide what belongs in CLAUDE.md?",
     "options": [
-      "CLAUDE.md files over 1KB are automatically rejected by Claude Code",
-      "CLAUDE.md is loaded into every conversation turn, so large files waste context budget on information that may be irrelevant to the current task",
-      "Large CLAUDE.md files slow down Claude Code's startup time significantly",
-      "CLAUDE.md cannot contain more than 10 rules due to parser limitations"
+      "30,400 tokens of CLAUDE.md injection is reasonable — context limits are high enough that this is not a practical concern",
+      "CLAUDE.md loads on every turn regardless of the current task. Only durable, always-relevant facts (build commands, key conventions, critical gotchas) belong there. Occasional-use content should move to skills or path-scoped rules to avoid the constant token tax",
+      "The solution is to compress CLAUDE.md with shorter phrasing while preserving all guidance",
+      "Splitting CLAUDE.md into separate files via @import fixes the problem — the token cost stays the same but maintenance is easier"
     ],
     "answer": 1,
-    "explanation": "CLAUDE.md is injected into context on every turn. Bloating it with rarely-needed information permanently consumes context budget, displacing room for actual conversation and tool results. Include only always-relevant project context; move optional details to @import files or skills."
+    "explanation": "CLAUDE.md loads on every single turn, making its token count a fixed per-turn tax. Deployment runbooks, occasional-use checklists, and specialised guides not relevant to everyday tasks waste this budget constantly. The right inclusion criterion is: 'would a developer benefit from this on virtually every task?' Skills and path-scoped rules handle the 'sometimes relevant' content without the constant overhead."
   },
   {
     "id": "context-self-review-limitation",
@@ -983,15 +983,15 @@
     "id": "context-progressive-summarization",
     "domain": "context",
     "difficulty": "advanced",
-    "question": "An agent is building a financial report from 200 source documents. It progressively summarizes earlier findings to stay within the context window. What specific risk must be managed?",
+    "question": "An agent is building a financial report from 200 source documents. It progressively summarises earlier findings to stay within the context window. What specific risk must be managed?",
     "options": [
       "Summaries use more tokens than originals, causing rapid context growth",
-      "Progressive summarization tends to drop precise numbers, dates, and named entities in favor of general trends, which can corrupt financial analysis",
+      "Progressive summarisation tends to drop precise numbers, dates, and named entities in favour of general trends, which can corrupt financial analysis",
       "The agent may loop infinitely creating summaries of summaries",
-      "Source documents become inaccessible after summarization since they are deleted from the session"
+      "Source documents become inaccessible after summarisation since they are deleted from the session"
     ],
     "answer": 1,
-    "explanation": "Summarization naturally compresses away specific values — exact figures, dates, account numbers — in favor of narrative. For financial reports where precision is critical, progressive summarization must be designed to explicitly preserve key data points, or those values should be stored separately."
+    "explanation": "Summarisation naturally compresses away specific values — exact figures, dates, account numbers — in favour of narrative. For financial reports where precision is critical, progressive summarisation must be designed to explicitly preserve key data points, or those values should be stored separately."
   },
   {
     "id": "context-lost-in-middle",
@@ -1029,7 +1029,7 @@
     "options": [
       "Keep all intermediate work in the conversation transcript and rely on the model's memory",
       "Write intermediate findings to scratchpad files on disk, reading them back as needed",
-      "Spawn a new sub-agent to memorize the findings for later retrieval",
+      "Spawn a new sub-agent to memorise the findings for later retrieval",
       "Increase the context window size to hold all intermediate work"
     ],
     "answer": 1,
@@ -1042,12 +1042,12 @@
     "question": "Your conversation with Claude has grown very long and response quality is degrading. What Claude Code feature helps manage this?",
     "options": [
       "/reset — deletes the session and starts completely fresh",
-      "/compact — summarizes earlier conversation turns to free up context space while preserving the session",
+      "/compact — summarises earlier conversation turns to free up context space while preserving the session",
       "/trim — removes the last 10 messages from the session",
       "/save — exports the conversation to a file and clears the window"
     ],
     "answer": 1,
-    "explanation": "/compact triggers context compaction, summarizing earlier turns to reduce token count while keeping the session alive. This differs from /reset (which wipes the session) and is preferable when you want to continue the same work without starting over."
+    "explanation": "/compact triggers context compaction, summarising earlier turns to reduce token count while keeping the session alive. This differs from /reset (which wipes the session) and is preferable when you want to continue the same work without starting over."
   },
   {
     "id": "context-tool-result-size",
@@ -1067,7 +1067,7 @@
     "id": "context-information-provenance",
     "domain": "context",
     "difficulty": "advanced",
-    "question": "Your research agent synthesizes findings from 15 sources. The final report makes factual claims but the downstream system can't verify which claims came from which sources. What should the agent architecture include?",
+    "question": "Your research agent synthesises findings from 15 sources. The final report makes factual claims but the downstream system can't verify which claims came from which sources. What should the agent architecture include?",
     "options": [
       "An appendix listing all 15 sources without linking them to specific claims",
       "Inline citation mapping that links each factual claim to the specific source(s) it came from",
@@ -1081,7 +1081,7 @@
     "id": "context-conflicting-sources",
     "domain": "context",
     "difficulty": "advanced",
-    "question": "Your research agent finds that two authoritative sources give conflicting statistics for the same metric (one reports 34%, the other 41%). What is the correct agent behavior?",
+    "question": "Your research agent finds that two authoritative sources give conflicting statistics for the same metric (one reports 34%, the other 41%). What is the correct agent behaviour?",
     "options": [
       "Average the two values and report 37.5% as the consensus figure",
       "Use whichever source was published more recently and discard the other",
@@ -1089,7 +1089,7 @@
       "Choose the more conservative (lower) value to avoid overstating findings"
     ],
     "answer": 2,
-    "explanation": "When authoritative sources conflict, the agent should not silently resolve the conflict by choosing or averaging — that hides important uncertainty. The correct behavior is to transparently surface the discrepancy, attribute each figure to its source, and flag it for human judgment."
+    "explanation": "When authoritative sources conflict, the agent should not silently resolve the conflict by choosing or averaging — that hides important uncertainty. The correct behaviour is to transparently surface the discrepancy, attribute each figure to its source, and flag it for human judgement."
   },
   {
     "id": "prompting-iterative-interview",
@@ -1117,7 +1117,7 @@
       "Run the tests first, then generate code based on which tests existed before adding new ones"
     ],
     "answer": 1,
-    "explanation": "Test-driven iteration uses actual test results as grounding signal — the model receives concrete, objective feedback rather than subjective judgment. Feeding failing test output closes the loop precisely and prevents hallucinated correctness."
+    "explanation": "Test-driven iteration uses actual test results as grounding signal — the model receives concrete, objective feedback rather than subjective judgement. Feeding failing test output closes the loop precisely and prevents hallucinated correctness."
   },
   {
     "id": "prompting-explicit-criteria",
@@ -1139,7 +1139,7 @@
     "difficulty": "intermediate",
     "question": "You need Claude to extract structured data (title, author, publication_date, summary) from unstructured articles. Which approach produces the most reliable, parseable output?",
     "options": [
-      "Ask Claude to 'summarize the article and mention the author and date'",
+      "Ask Claude to 'summarise the article and mention the author and date'",
       "Define a tool with a JSON schema for the fields and use tool_use to force the model to populate the schema",
       "Ask Claude to output a markdown table with the fields as columns",
       "Use a regex to extract fields from Claude's prose response after the fact"
@@ -1195,7 +1195,7 @@
     "difficulty": "advanced",
     "question": "Which use case is NOT suitable for the Message Batches API?",
     "options": [
-      "Generating product descriptions for a 10,000-item catalog overnight",
+      "Generating product descriptions for a 10,000-item catalogue overnight",
       "Classifying customer support tickets into categories for a weekly report",
       "A multi-turn customer support chatbot that needs to respond to users within seconds",
       "Running nightly sentiment analysis on the day's social media mentions"
@@ -1207,15 +1207,15 @@
     "id": "prompting-interview-clarification",
     "domain": "prompting",
     "difficulty": "beginner",
-    "question": "A developer asks Claude to 'improve the performance of this function' without providing any other context. What is the ideal Claude behavior before making changes?",
+    "question": "A developer asks Claude to 'improve the performance of this function' without providing any other context. What is the ideal Claude behaviour before making changes?",
     "options": [
-      "Make the most common performance optimizations immediately to save time",
+      "Make the most common performance optimisations immediately to save time",
       "Ask clarifying questions: What performance metric matters? What are the constraints? Is correctness more important than speed?",
       "Refuse the task until a complete requirements document is provided",
-      "Add logging to measure current performance, then optimize based on the measurements"
+      "Add logging to measure current performance, then optimise based on the measurements"
     ],
     "answer": 1,
-    "explanation": "Ambiguous tasks should trigger clarifying questions before action. 'Improve performance' could mean latency, throughput, memory, readability, or all of these — and tradeoffs differ. Asking first prevents wasted effort on the wrong optimization."
+    "explanation": "Ambiguous tasks should trigger clarifying questions before action. 'Improve performance' could mean latency, throughput, memory, or readability — and tradeoffs differ. Asking first prevents wasted effort on the wrong optimisation."
   },
   {
     "id": "prompting-chain-of-thought",
@@ -1225,7 +1225,7 @@
     "options": [
       "For simple lookup tasks where the answer is a single known fact",
       "For multi-step reasoning tasks where intermediate steps are needed to reach the correct conclusion",
-      "Only for math problems — it has no effect on other task types",
+      "Only for maths problems — it has no effect on other task types",
       "When you want shorter, more concise responses"
     ],
     "answer": 1,
@@ -1234,29 +1234,29 @@
   {
     "id": "prompting-role-persona",
     "domain": "prompting",
-    "difficulty": "beginner",
-    "question": "When should you assign Claude a specific role or persona in the system prompt (e.g., 'You are a senior security engineer')?",
+    "difficulty": "intermediate",
+    "question": "Your API uses Claude for three different use cases: (1) generating legal contract language that must be precise and conservative, (2) writing marketing copy that should be creative and engaging, and (3) providing customer support responses that should be warm and empathetic. All three share the same generic system prompt and produce responses that feel inconsistently toned. What is the most effective fix?",
     "options": [
-      "Never — role assignment confuses the model about its actual capabilities",
-      "When the role establishes domain expertise and tone that should consistently shape all responses",
-      "Only when the task is creative writing, not for technical or analytical tasks",
-      "Only if the user explicitly requests a specific persona each turn"
+      "Use a different Claude model for each use case — some models specialise in legal, creative, or empathetic tasks",
+      "Assign a domain-specific role in each system prompt ('You are a senior contracts attorney...', 'You are an award-winning copywriter...', 'You are an empathetic support specialist...') to activate the relevant vocabulary, tone, and reasoning patterns",
+      "Add explicit tone adjectives to each user message rather than the system prompt so they can vary per request",
+      "Fine-tune separate model versions for each use case"
     ],
     "answer": 1,
-    "explanation": "Assigning a role in the system prompt activates relevant domain knowledge, vocabulary, and reasoning patterns that persist across all turns. A 'senior security engineer' persona primes the model to apply security-first thinking without repeated prompting."
+    "explanation": "Role assignment in the system prompt primes the model with domain-specific vocabulary, risk tolerance, and tone that persist across the entire session. Per-message tone hints (C) work but require repetition on every call and are less consistent. Model specialisation (A, D) is unnecessary overhead when prompt-level role assignment handles the problem directly."
   },
   {
     "id": "prompting-system-prompt-role",
     "domain": "prompting",
-    "difficulty": "beginner",
-    "question": "What is the primary purpose of a system prompt in an agentic application?",
+    "difficulty": "intermediate",
+    "question": "Your code review agent produces wildly inconsistent feedback between runs — sometimes focusing on style, sometimes security, sometimes performance — with no predictable pattern. All review criteria are embedded in the user message alongside the diff. What architectural change most improves consistency?",
     "options": [
-      "To store the conversation history between turns",
-      "To establish persistent identity, behavioral constraints, tool context, and background knowledge that apply across all turns",
-      "To override the model's safety guidelines for the application",
-      "To cache expensive computations between API calls"
+      "Set the model's temperature to 0 to eliminate randomness",
+      "Move the review criteria, focus areas, output format, and agent role into the system prompt, which is injected consistently on every run. User messages then carry only the diff",
+      "Run each PR through 5 independent passes and only report issues that appear in at least 3 of 5",
+      "Ask the agent to self-rate confidence on each finding and surface only findings above 0.8"
     ],
     "answer": 1,
-    "explanation": "The system prompt is injected at the start of every conversation turn and establishes the agent's persistent configuration: its role, behavioral rules, available tools, and domain knowledge. It's the primary lever for controlling agent behavior consistently across all interactions."
+    "explanation": "The system prompt establishes the agent's persistent configuration: role, focus areas, output format, and behavioural rules. When review criteria live in user messages, they are one-off instructions that shift between runs. Moving them to the system prompt ensures every review starts from the same baseline regardless of what the user message contains."
   }
 ]
