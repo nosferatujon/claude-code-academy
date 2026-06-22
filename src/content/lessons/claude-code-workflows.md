@@ -63,15 +63,18 @@ This lets you split a large CLAUDE.md into topic-specific files without bloating
 An alternative to a monolithic CLAUDE.md is the `.claude/rules/` directory — topic-specific files like `testing.md`, `api-conventions.md`, `database.md`. Each file is focused on one area, making it easier to maintain and update individual sections.
 
 ```mermaid
-graph TD
-    subgraph user ["~/.claude/CLAUDE.md  ·  User level\nPersonal · never committed · applies to every project you open"]
-        subgraph project ["CLAUDE.md (project root)  ·  Project level\nCommitted to git · shared with the whole team"]
-            subgraph dir ["src/auth/CLAUDE.md  ·  Directory level\nAuto-loaded when Claude works in that folder"]
-                W(["All three files load when you work here"])
-            end
-        end
-    end
-    style W fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+flowchart TD
+    U["~/.claude/CLAUDE.md\nUser level\nPersonal · never committed · applies to every project"]
+    P["CLAUDE.md  (project root)\nProject level\nCommitted to git · shared with the whole team"]
+    D["src/auth/CLAUDE.md\nDirectory level\nAuto-loaded when Claude works in that folder"]
+    All(["When working in src/auth/ —\nall three files load simultaneously"])
+
+    U --> P --> D --> All
+
+    style U fill:#252a38,stroke:#d97757
+    style P fill:#252a38,stroke:#3a4058
+    style D fill:#252a38,stroke:#3a4058
+    style All fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
 ```
 
 ### Diagnosing inconsistent behavior
