@@ -3,7 +3,7 @@ title: Design structured MCP error responses
 domain: mcp
 difficulty: advanced
 estMinutes: 25
-order: 3
+order: 2
 intro: Build a mock MCP tool that returns categorized errors so Claude can respond differently to transient failures, validation problems, business rule violations, and permission denials.
 steps:
   - "Create a minimal MCP server in Node.js (or Python) with a single tool `query_records` that accepts a `filter` parameter."

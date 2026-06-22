@@ -3,7 +3,7 @@ title: Choose the right workload for Message Batches
 domain: prompting
 difficulty: intermediate
 estMinutes: 20
-order: 3
+order: 4
 intro: Understand when to use the Message Batches API — 50% cost savings and high throughput with a 24-hour window — and practice correlating results with custom_id.
 steps:
   - "Consider two workflows: (A) a pre-merge CI check that blocks a pull request and must complete in under 2 minutes, and (B) an overnight analysis that classifies 10,000 support tickets before the morning standup."
