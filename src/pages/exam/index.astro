@@ -181,15 +181,21 @@ const poolByDomain = Object.fromEntries(
         reviewHtml = `<p style="color:var(--green);font-weight:600">✓ All correct — nothing to review.</p>`;
       } else {
         const cards = missed.map(({ idx, q, chosen }) => {
-          const wrongOpt = chosen !== null
-            ? `<div class="opt incorrect" style="cursor:default">✗ Your answer: ${escapeHtml(q.options[chosen])}</div>`
-            : `<div class="opt incorrect" style="cursor:default">✗ No answer selected</div>`;
+          const opts = q.options.map((o, oi) => {
+            let cls = 'opt';
+            if (oi === q.answer) cls += ' correct';
+            else if (oi === chosen) cls += ' incorrect';
+            return `<div class="${cls}" style="cursor:default">${escapeHtml(o)}</div>`;
+          }).join('');
+          const skipped = chosen === null
+            ? `<div class="opt incorrect" style="cursor:default;margin-bottom:0.25rem">✗ No answer selected</div>`
+            : '';
           return (
             `<div class="q answered">` +
             `<div class="qnum">Q${idx + 1} &middot; ${escapeHtml(domainMeta[q.domain].name)}</div>` +
             `<p><strong>${escapeHtml(q.question)}</strong></p>` +
-            wrongOpt +
-            `<div class="opt correct" style="cursor:default">✓ Correct: ${escapeHtml(q.options[q.answer])}</div>` +
+            skipped +
+            opts +
             `<div class="explain">${escapeHtml(q.explanation)}</div>` +
             `</div>`
           );
