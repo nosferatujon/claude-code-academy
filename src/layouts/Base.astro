@@ -1,0 +1,57 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Learn Claude Code by doing, and prepare for the CCA-F certification.' } = Astro.props;
+
+const nav = [
+  { href: '/', label: 'Dashboard' },
+  { href: '/lessons/', label: 'Lessons' },
+  { href: '/exercises/', label: 'Exercises' },
+  { href: '/exam/', label: 'Practice Exam' },
+  { href: '/progress/', label: 'Progress' },
+];
+
+const path = Astro.url.pathname;
+const isCurrent = (href: string) =>
+  href === '/' ? path === '/' : path.startsWith(href);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title} · Claude Code Academy</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script is:inline src="/progress.js"></script>
+  </head>
+  <body>
+    <header class="site">
+      <div class="container bar">
+        <a class="brand" href="/">Claude Code <span>Academy</span></a>
+        <nav class="main">
+          {nav.map((n) => (
+            <a href={n.href} aria-current={isCurrent(n.href) ? 'page' : undefined}>{n.label}</a>
+          ))}
+        </nav>
+      </div>
+    </header>
+    <main>
+      <div class="container">
+        <slot />
+      </div>
+    </main>
+    <footer class="site">
+      <div class="container">
+        Claude Code Academy — an unofficial study companion for the Claude Certified Architect
+        (CCA-F) exam. Built with Claude Code. Progress is stored only in your browser.
+      </div>
+    </footer>
+  </body>
+</html>

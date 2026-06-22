@@ -1,0 +1,95 @@
+---
+import { getCollection, render } from 'astro:content';
+import { marked } from 'marked';
+import Base from '../../layouts/Base.astro';
+import { domainName } from '../../data/domains';
+
+export async function getStaticPaths() {
+  const exercises = await getCollection('exercises');
+  return exercises.map((exercise) => ({
+    params: { slug: exercise.id },
+    props: { exercise },
+  }));
+}
+
+const { exercise } = Astro.props;
+const d = exercise.data;
+const { Content } = await render(exercise);
+const solutionHtml = marked.parse(d.solution);
+---
+
+<Base title={d.title} description={d.intro}>
+  <p class="muted"><a href="/exercises/">&larr; All exercises</a></p>
+  <div class="meta-row">
+    <span class="badge">{domainName(d.domain)}</span>
+    <span class={`badge ${d.difficulty}`}>{d.difficulty}</span>
+    <span>{d.estMinutes} min</span>
+  </div>
+  <h1>{d.title}</h1>
+  <p class="lead">{d.intro}</p>
+
+  <article><Content /></article>
+
+  {d.steps.length > 0 && (
+    <>
+      <h2>Your task</h2>
+      <ol class="steps">
+        {d.steps.map((s) => <li set:html={marked.parseInline(s)} />)}
+      </ol>
+    </>
+  )}
+
+  {d.verify.length > 0 && (
+    <>
+      <h2>Check your work</h2>
+      <p class="muted">Run these in your terminal to confirm the result:</p>
+      {d.verify.map((v) => (
+        <div class="cmd">
+          <code>{v.command}</code>
+        </div>
+      ))}
+      <ul>
+        {d.verify.map((v) => <li class="muted" set:html={marked.parseInline(v.label)} />)}
+      </ul>
+    </>
+  )}
+
+  {d.hints.length > 0 && (
+    <details class="box">
+      <summary>Hints ({d.hints.length})</summary>
+      <div class="body">
+        <ul>
+          {d.hints.map((h) => <li set:html={marked.parseInline(h)} />)}
+        </ul>
+      </div>
+    </details>
+  )}
+
+  <details class="box">
+    <summary>Reveal model solution</summary>
+    <div class="body" set:html={solutionHtml} />
+  </details>
+
+  <div class="done-toggle" data-slug={exercise.id} data-domain={d.domain} style="margin-top:2rem">
+    <button class="btn" data-action="toggle-ex">Mark complete</button>
+  </div>
+
+  <script is:inline>
+    (function () {
+      const wrap = document.querySelector('.done-toggle');
+      const btn = wrap.querySelector('[data-action="toggle-ex"]');
+      const slug = wrap.dataset.slug;
+      const domain = wrap.dataset.domain;
+      function paint() {
+        const done = window.Progress.isExerciseDone(slug);
+        wrap.classList.toggle('is-done', done);
+        btn.textContent = done ? '✓ Completed' : 'Mark complete';
+      }
+      btn.addEventListener('click', () => {
+        window.Progress.toggleExercise(slug, domain);
+        paint();
+      });
+      paint();
+    })();
+  </script>
+</Base>

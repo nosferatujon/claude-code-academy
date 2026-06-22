@@ -1,0 +1,35 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { DOMAINS } from '../../data/domains';
+
+const lessons = await getCollection('lessons');
+lessons.sort((a, b) => a.data.order - b.data.order);
+---
+
+<Base title="Lessons">
+  <h1>Lessons</h1>
+  <p class="lead">
+    Short readings covering all five exam domains &mdash; including the Agent SDK and Claude API
+    concepts you can&rsquo;t run hands-on but still need to know for the exam.
+  </p>
+
+  {DOMAINS.map((d) => {
+    const items = lessons.filter((l) => l.data.domain === d.id);
+    if (!items.length) return null;
+    return (
+      <section id={d.id}>
+        <h2>{d.name} <span class="badge weight">{d.weight}%</span></h2>
+        <div class="grid cols-2">
+          {items.map((l) => (
+            <a class="card" href={`/lessons/${l.id}/`}>
+              <h3>{l.data.title}</h3>
+              <p class="muted">{l.data.summary}</p>
+              <p class="muted" style="margin-bottom:0">{l.data.minutes} min read</p>
+            </a>
+          ))}
+        </div>
+      </section>
+    );
+  })}
+</Base>

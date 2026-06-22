@@ -1,0 +1,55 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { DOMAINS } from '../../data/domains';
+
+const exercises = await getCollection('exercises');
+exercises.sort((a, b) => a.data.order - b.data.order);
+---
+
+<Base title="Exercises">
+  <h1>Hands-on exercises</h1>
+  <p class="lead">
+    Each task is done in <strong>your own Claude Code session</strong>. Read the goal, try it, run the
+    self-checks, then reveal the model solution to compare. Nothing here calls the Claude API.
+  </p>
+
+  {DOMAINS.map((d) => {
+    const items = exercises.filter((e) => e.data.domain === d.id);
+    if (!items.length) return null;
+    return (
+      <section id={d.id}>
+        <h2>{d.name} <span class="badge weight">{d.weight}%</span></h2>
+        {!d.practiceable && (
+          <p class="muted">
+            This domain is concept-heavy (Agent SDK / API). These exercises stay within what Claude
+            Code alone can demonstrate.
+          </p>
+        )}
+        <div class="grid cols-2">
+          {items.map((e) => (
+            <a class="card" href={`/exercises/${e.id}/`} data-ex-slug={e.id}>
+              <div class="meta-row" style="margin-top:0">
+                <span class={`badge ${e.data.difficulty}`}>{e.data.difficulty}</span>
+                <span>{e.data.estMinutes} min</span>
+                <span class="ex-done" data-ex-slug={e.id} style="margin-left:auto;color:var(--green)"></span>
+              </div>
+              <h3 style="margin-top:0.25rem">{e.data.title}</h3>
+              <p class="muted">{e.data.intro}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+    );
+  })}
+
+  <script is:inline>
+    function paintDone() {
+      document.querySelectorAll('.ex-done').forEach((el) => {
+        el.textContent = window.Progress.isExerciseDone(el.dataset.exSlug) ? '✓ done' : '';
+      });
+    }
+    paintDone();
+    document.addEventListener('progress-change', paintDone);
+  </script>
+</Base>

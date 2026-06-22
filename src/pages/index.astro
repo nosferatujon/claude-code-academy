@@ -1,0 +1,95 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { DOMAINS } from '../data/domains';
+
+const exercises = await getCollection('exercises');
+const lessons = await getCollection('lessons');
+const quiz = await getCollection('quiz');
+
+// Per-domain catalog totals, passed to the client for progress bars.
+const catalog = Object.fromEntries(
+  DOMAINS.map((d) => [
+    d.id,
+    {
+      ex: exercises.filter((e) => e.data.domain === d.id).length,
+      lesson: lessons.filter((l) => l.data.domain === d.id).length,
+    },
+  ]),
+);
+---
+
+<Base title="Dashboard">
+  <h1>Learn Claude Code, the hands-on way</h1>
+  <p class="lead">
+    Practice real Claude Code workflows in your own terminal, then check your readiness for the
+    Claude Certified Architect&nbsp;&mdash;&nbsp;Foundations (CCA-F) exam.
+  </p>
+
+  <div class="toolbar">
+    <a class="btn" href="/exercises/">Start exercising</a>
+    <a class="btn secondary" href="/exam/">Take a practice exam</a>
+  </div>
+
+  <h2>The five exam domains</h2>
+  <p class="muted">Cards show how many exercises and lessons exist per domain, and your completion.</p>
+
+  <div class="grid cols-2">
+    {DOMAINS.map((d) => (
+      <div class="card" data-domain={d.id}>
+        <h3>{d.name}</h3>
+        <div class="meta-row">
+          <span class="badge weight">{d.weight}% of exam</span>
+          {d.practiceable
+            ? <span class="badge beginner">Hands-on</span>
+            : <span class="badge concept">Concept-focused</span>}
+        </div>
+        <p class="muted">{d.blurb}</p>
+        <div class="progress"><span data-bar={d.id}></span></div>
+        <p class="muted" data-stat={d.id} style="margin-bottom:0.25rem"></p>
+        <p style="margin:0.5rem 0 0">
+          <a href={`/exercises/#${d.id}`}>Exercises</a> &nbsp;·&nbsp;
+          <a href={`/lessons/#${d.id}`}>Lessons</a>
+        </p>
+      </div>
+    ))}
+  </div>
+
+  <h2>How this works</h2>
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>You only need Claude Code</h3>
+      <p class="muted">
+        Every exercise is self-guided: you run the task in your own Claude Code session, then reveal
+        a model solution to compare. No Claude API key or Agent SDK required.
+      </p>
+    </div>
+    <div class="card">
+      <h3>{quiz.length} practice questions</h3>
+      <p class="muted">
+        The practice exam draws from a pool tagged by domain and scores you the way the real exam
+        weights each area, with an explanation for every answer.
+      </p>
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ catalog }}>
+    function render() {
+      const counts = window.Progress.domainCounts();
+      for (const [id, totals] of Object.entries(catalog)) {
+        const done = (counts[id]?.ex || 0) + (counts[id]?.lesson || 0);
+        const total = totals.ex + totals.lesson;
+        const pct = total ? Math.round((done / total) * 100) : 0;
+        const bar = document.querySelector(`[data-bar="${id}"]`);
+        const stat = document.querySelector(`[data-stat="${id}"]`);
+        if (bar) bar.style.width = pct + '%';
+        if (stat) {
+          stat.textContent =
+            `${counts[id]?.ex || 0}/${totals.ex} exercises · ${counts[id]?.lesson || 0}/${totals.lesson} lessons`;
+        }
+      }
+    }
+    render();
+    document.addEventListener('progress-change', render);
+  </script>
+</Base>

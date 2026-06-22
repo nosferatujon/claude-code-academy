@@ -1,0 +1,51 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { domainName } from '../../data/domains';
+
+export async function getStaticPaths() {
+  const lessons = await getCollection('lessons');
+  return lessons.map((lesson) => ({
+    params: { slug: lesson.id },
+    props: { lesson },
+  }));
+}
+
+const { lesson } = Astro.props;
+const { Content } = await render(lesson);
+---
+
+<Base title={lesson.data.title} description={lesson.data.summary}>
+  <p class="muted"><a href="/lessons/">&larr; All lessons</a></p>
+  <div class="meta-row">
+    <span class="badge">{domainName(lesson.data.domain)}</span>
+    <span>{lesson.data.minutes} min read</span>
+  </div>
+  <h1>{lesson.data.title}</h1>
+  <article>
+    <Content />
+  </article>
+
+  <div class="done-toggle" data-slug={lesson.id} data-domain={lesson.data.domain} style="margin-top:2rem">
+    <button class="btn" data-action="toggle-lesson">Mark as read</button>
+  </div>
+
+  <script is:inline>
+    (function () {
+      const wrap = document.querySelector('.done-toggle');
+      const btn = wrap.querySelector('[data-action="toggle-lesson"]');
+      const slug = wrap.dataset.slug;
+      const domain = wrap.dataset.domain;
+      function paint() {
+        const done = window.Progress.isLessonRead(slug);
+        wrap.classList.toggle('is-done', done);
+        btn.textContent = done ? '✓ Read' : 'Mark as read';
+      }
+      btn.addEventListener('click', () => {
+        window.Progress.toggleLesson(slug, domain);
+        paint();
+      });
+      paint();
+    })();
+  </script>
+</Base>

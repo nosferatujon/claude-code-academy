@@ -1,0 +1,196 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { DOMAINS } from '../../data/domains';
+
+const quiz = await getCollection('quiz');
+// Strip the collection wrapper; ship plain question objects to the client.
+const questions = quiz.map((q) => q.data);
+const domainMeta = Object.fromEntries(DOMAINS.map((d) => [d.id, { name: d.name, weight: d.weight }]));
+const poolByDomain = Object.fromEntries(
+  DOMAINS.map((d) => [d.id, questions.filter((q) => q.domain === d.id).length]),
+);
+---
+
+<Base title="Practice Exam">
+  <h1>Practice exam</h1>
+  <p class="lead">
+    Questions are sampled across the five domains using the real exam&rsquo;s weighting. Pass mark is
+    set at <strong>72%</strong> (the CCA-F scaled equivalent of 720/1000).
+  </p>
+
+  <div id="setup">
+    <div class="toolbar">
+      <label>Questions:
+        <select id="count">
+          <option value="10">10 (quick)</option>
+          <option value="20" selected>20</option>
+          <option value="40">40</option>
+          <option value="0">All ({questions.length})</option>
+        </select>
+      </label>
+      <button class="btn" id="start">Start exam</button>
+    </div>
+    <table class="tablelike">
+      <thead><tr><th>Domain</th><th>Weight</th><th>Questions in pool</th></tr></thead>
+      <tbody>
+        {DOMAINS.map((d) => (
+          <tr>
+            <td>{d.name}</td>
+            <td>{d.weight}%</td>
+            <td>{poolByDomain[d.id]}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <div id="result" style="display:none"></div>
+  <form id="quizForm" style="display:none"></form>
+  <div class="toolbar" id="actions" style="display:none">
+    <button class="btn" id="submit" type="button">Submit answers</button>
+    <button class="btn secondary" id="restart" type="button">New exam</button>
+  </div>
+
+  <script is:inline define:vars={{ questions, domainMeta }}>
+    const els = {
+      setup: document.getElementById('setup'),
+      form: document.getElementById('quizForm'),
+      actions: document.getElementById('actions'),
+      result: document.getElementById('result'),
+      count: document.getElementById('count'),
+    };
+    let current = [];
+
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function pickQuestions(total) {
+      const byDomain = {};
+      for (const q of questions) (byDomain[q.domain] ||= []).push(q);
+      if (!total || total >= questions.length) return shuffle(questions);
+
+      const weightSum = Object.values(domainMeta).reduce((s, d) => s + d.weight, 0);
+      let picked = [];
+      for (const [id, meta] of Object.entries(domainMeta)) {
+        const pool = shuffle(byDomain[id] || []);
+        const n = Math.min(pool.length, Math.round((meta.weight / weightSum) * total));
+        picked.push(...pool.slice(0, n));
+      }
+      // Top up / trim to exact count from whatever remains.
+      const chosen = new Set(picked);
+      const remaining = shuffle(questions.filter((q) => !chosen.has(q)));
+      while (picked.length < total && remaining.length) picked.push(remaining.pop());
+      return shuffle(picked.slice(0, total));
+    }
+
+    function render() {
+      els.form.innerHTML = '';
+      current.forEach((q, i) => {
+        const card = document.createElement('div');
+        card.className = 'q';
+        card.dataset.answer = q.answer;
+        card.dataset.domain = q.domain;
+        const opts = q.options
+          .map(
+            (o, oi) =>
+              `<label class="opt"><input type="radio" name="q${i}" value="${oi}"> ${escapeHtml(o)}</label>`,
+          )
+          .join('');
+        card.innerHTML =
+          `<div class="qnum">Question ${i + 1} of ${current.length} · ${escapeHtml(domainMeta[q.domain].name)}</div>` +
+          `<p><strong>${escapeHtml(q.question)}</strong></p>` +
+          opts +
+          `<div class="explain"></div>`;
+        els.form.appendChild(card);
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]),
+      );
+    }
+
+    function start() {
+      const total = parseInt(els.count.value, 10);
+      current = pickQuestions(total);
+      render();
+      els.setup.style.display = 'none';
+      els.result.style.display = 'none';
+      els.form.style.display = '';
+      els.actions.style.display = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function grade() {
+      const cards = [...els.form.querySelectorAll('.q')];
+      let correct = 0;
+      const byDomain = {};
+      cards.forEach((card, i) => {
+        const ans = parseInt(card.dataset.answer, 10);
+        const dom = card.dataset.domain;
+        byDomain[dom] ||= { correct: 0, total: 0 };
+        byDomain[dom].total++;
+        const chosen = card.querySelector(`input[name="q${i}"]:checked`);
+        const opts = [...card.querySelectorAll('.opt')];
+        card.classList.add('answered');
+        opts.forEach((o, oi) => {
+          o.querySelector('input').disabled = true;
+          if (oi === ans) o.classList.add('correct');
+        });
+        if (chosen) {
+          const ci = parseInt(chosen.value, 10);
+          if (ci === ans) {
+            correct++;
+            byDomain[dom].correct++;
+          } else {
+            opts[ci].classList.add('incorrect');
+          }
+        }
+        const q = current[i];
+        card.querySelector('.explain').innerHTML =
+          `<strong>Answer:</strong> ${escapeHtml(q.options[ans])}<br>${escapeHtml(q.explanation)}`;
+      });
+
+      const total = cards.length;
+      const pct = Math.round((correct / total) * 100);
+      window.Progress.saveExam({ correct, total, byDomain });
+      showResult(correct, total, pct, byDomain);
+    }
+
+    function showResult(correct, total, pct, byDomain) {
+      const pass = pct >= 72;
+      let rows = '';
+      for (const [id, s] of Object.entries(byDomain)) {
+        const dpct = Math.round((s.correct / s.total) * 100);
+        rows += `<tr><td>${escapeHtml(domainMeta[id].name)}</td><td>${s.correct}/${s.total}</td><td>${dpct}%</td></tr>`;
+      }
+      els.result.innerHTML =
+        `<div class="score-banner" style="border-color:${pass ? 'var(--green)' : 'var(--red)'}">` +
+        `${pass ? '✓ Pass' : '✗ Keep studying'} — ${correct}/${total} (${pct}%)</div>` +
+        `<p class="muted">Pass mark is 72%. Review the explanations below, then target your weakest domains.</p>` +
+        `<table class="tablelike"><thead><tr><th>Domain</th><th>Score</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
+      els.result.style.display = '';
+      els.actions.querySelector('#submit').style.display = 'none';
+      els.result.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    document.getElementById('start').addEventListener('click', start);
+    document.getElementById('submit').addEventListener('click', grade);
+    document.getElementById('restart').addEventListener('click', () => {
+      els.form.style.display = 'none';
+      els.actions.style.display = 'none';
+      els.actions.querySelector('#submit').style.display = '';
+      els.result.style.display = 'none';
+      els.setup.style.display = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  </script>
+</Base>

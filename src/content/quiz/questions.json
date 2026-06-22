@@ -1,0 +1,314 @@
+[
+  {
+    "id": "agentic-loop-order",
+    "domain": "agentic",
+    "difficulty": "beginner",
+    "question": "What is the correct order of the core agentic loop?",
+    "options": [
+      "Act → observe → gather context → decide",
+      "Gather context → decide → act → observe → repeat",
+      "Decide → gather context → observe → act",
+      "Observe → act → decide → gather context"
+    ],
+    "answer": 1,
+    "explanation": "An agent repeatedly gathers context, decides on the next action, acts (often a tool call), observes the result, and loops until done. Claude Code is a reference implementation of exactly this cycle."
+  },
+  {
+    "id": "agentic-hub-spoke",
+    "domain": "agentic",
+    "difficulty": "intermediate",
+    "question": "In a hub-and-spoke (orchestrator–worker) topology, how do worker agents coordinate?",
+    "options": [
+      "Workers broadcast to all other workers directly",
+      "Workers share a single global context window",
+      "All coordination flows through the central orchestrator; workers don't talk to each other",
+      "Workers coordinate via a shared database only"
+    ],
+    "answer": 2,
+    "explanation": "In hub-and-spoke, the orchestrator decomposes the goal, fans work to workers, and synthesizes results. Keeping all communication through the hub keeps paths simple (n instead of n²) and failures easy to localize."
+  },
+  {
+    "id": "agentic-single-vs-multi",
+    "domain": "agentic",
+    "difficulty": "intermediate",
+    "question": "When is a single-agent design generally preferable to multi-agent?",
+    "options": [
+      "When the task is cohesive and doesn't need parallelism or context isolation",
+      "Always — multi-agent never helps",
+      "Only when there is no API access",
+      "When you want the highest possible token usage"
+    ],
+    "answer": 0,
+    "explanation": "Single agents are simpler, more predictable, and cheaper. Reach for multi-agent specifically when work is parallelizable or you need to isolate context so one sub-task doesn't pollute another."
+  },
+  {
+    "id": "agentic-hooks-purpose",
+    "domain": "agentic",
+    "difficulty": "intermediate",
+    "question": "Why are lifecycle hooks the right mechanism for enforcing non-negotiable policy?",
+    "options": [
+      "They make the model more creative",
+      "They are executed by the harness, not chosen by the model, so they can't be skipped",
+      "They reduce the size of the context window automatically",
+      "They are the only way to call tools"
+    ],
+    "answer": 1,
+    "explanation": "Because hooks (PreToolUse, PostToolUse, Stop, etc.) run deterministically in the harness rather than being decided by the model, they're ideal for enforcing things like formatting, secret scanning, or blocking dangerous commands."
+  },
+  {
+    "id": "agentic-subagent-return",
+    "domain": "agentic",
+    "difficulty": "beginner",
+    "question": "When an orchestrator delegates to a sub-agent, what should return to the parent?",
+    "options": [
+      "The sub-agent's entire transcript and every tool result",
+      "Only the sub-agent's final, distilled result",
+      "Nothing — sub-agents can't return data",
+      "A copy of the parent's context"
+    ],
+    "answer": 1,
+    "explanation": "Sub-agents run in their own context window and return only their final result. Handing back results rather than full transcripts keeps the parent's context clean and prevents error/noise propagation."
+  },
+
+  {
+    "id": "prompting-json-reliability",
+    "domain": "prompting",
+    "difficulty": "beginner",
+    "question": "Which combination most improves the reliability of JSON output from a prompt?",
+    "options": [
+      "Ask politely and hope for the best",
+      "Specify the exact schema, give one worked example, and instruct it to return only the JSON",
+      "Make the prompt as long as possible",
+      "Request the answer in prose, then convert it manually"
+    ],
+    "answer": 1,
+    "explanation": "Precise schema (names, types, required/optional) + a concrete example + an explicit 'output only the object' instruction drive reliability. Over the API you can further force the shape with tool use / structured outputs."
+  },
+  {
+    "id": "prompting-fewshot",
+    "domain": "prompting",
+    "difficulty": "beginner",
+    "question": "What is the best practice for few-shot examples?",
+    "options": [
+      "Use as many examples as possible regardless of relevance",
+      "Use 2–4 representative examples that cover the tricky/boundary cases",
+      "Only ever use a single example",
+      "Examples should use a different format than the desired output"
+    ],
+    "answer": 1,
+    "explanation": "A few well-chosen examples that cover edge cases and match the target format usually beat both prose rules and large numbers of redundant examples. The model imitates the pattern you show it."
+  },
+  {
+    "id": "prompting-context-engineering",
+    "domain": "prompting",
+    "difficulty": "intermediate",
+    "question": "\"Context engineering\" primarily refers to:",
+    "options": [
+      "Finding magic words that unlock hidden model abilities",
+      "Curating what goes into the context window — the right files, goal, constraints, and examples — while removing noise",
+      "Increasing the temperature setting",
+      "Writing prompts only in JSON"
+    ],
+    "answer": 1,
+    "explanation": "Modern prompting is less about magic phrasing and more about putting the right information in the window and leaving noise out — giving the model what a capable new teammate would need."
+  },
+  {
+    "id": "prompting-positive-instructions",
+    "domain": "prompting",
+    "difficulty": "beginner",
+    "question": "Which instruction style does Claude generally follow most reliably?",
+    "options": [
+      "Vague, open-ended requests",
+      "Explicit, specific, positively framed instructions about goal, constraints, and format",
+      "Only negative instructions about what not to do",
+      "Instructions hidden in the middle of a long document"
+    ],
+    "answer": 1,
+    "explanation": "Claude follows instructions literally, so being explicit and specific — stating the goal, constraints, and exact output format, framed positively — produces the most reliable results."
+  },
+
+  {
+    "id": "workflows-claudemd-vs-skill",
+    "domain": "workflows",
+    "difficulty": "intermediate",
+    "question": "What is the key difference between CLAUDE.md and an Agent Skill?",
+    "options": [
+      "They are identical; the names are interchangeable",
+      "CLAUDE.md is loaded into context on every turn; a Skill's body loads on demand when a task matches it",
+      "Skills are always loaded; CLAUDE.md loads only when invoked",
+      "CLAUDE.md can only contain code, Skills only contain prose"
+    ],
+    "answer": 1,
+    "explanation": "CLAUDE.md is always-loaded project memory (so keep it tight). Skills package expertise that is pulled into context only when relevant, letting you scale capabilities without bloating every turn."
+  },
+  {
+    "id": "workflows-slash-location",
+    "domain": "workflows",
+    "difficulty": "beginner",
+    "question": "Where do custom slash commands live, and how is the command named?",
+    "options": [
+      "In CLAUDE.md, named by a heading",
+      "As Markdown files in .claude/commands/; the file name becomes the command",
+      "In package.json under \"commands\"",
+      "They can only be created by Anthropic"
+    ],
+    "answer": 1,
+    "explanation": "A file like .claude/commands/review.md becomes /review. Commands can take input via the $ARGUMENTS placeholder and, when committed, are shared with the whole team."
+  },
+  {
+    "id": "workflows-plan-mode",
+    "domain": "workflows",
+    "difficulty": "beginner",
+    "question": "What does plan mode do?",
+    "options": [
+      "Automatically commits and pushes changes",
+      "Lets Claude research and propose an approach without making edits, so you can approve first",
+      "Disables all tools permanently",
+      "Runs the test suite in a loop"
+    ],
+    "answer": 1,
+    "explanation": "Plan mode is gather + decide with no act: Claude proposes a plan without editing, giving you a safety gate to review the approach before any changes happen — ideal for large or risky work."
+  },
+  {
+    "id": "workflows-settings-local",
+    "domain": "workflows",
+    "difficulty": "intermediate",
+    "question": "Which file holds personal, machine-specific overrides that should not be committed?",
+    "options": [
+      ".claude/settings.json",
+      ".claude/settings.local.json",
+      "CLAUDE.md",
+      ".claude/commands/local.md"
+    ],
+    "answer": 1,
+    "explanation": "settings.json holds shared, committed project configuration; settings.local.json holds personal overrides and is git-ignored. Both configure tools, permissions, env vars, and hooks."
+  },
+  {
+    "id": "workflows-cicd",
+    "domain": "workflows",
+    "difficulty": "intermediate",
+    "question": "How is Claude Code typically used in CI/CD pipelines?",
+    "options": [
+      "It cannot run outside an interactive terminal",
+      "Headlessly via print mode (claude -p \"...\"), constrained by permission settings",
+      "By emailing prompts to Anthropic",
+      "Only through the web app"
+    ],
+    "answer": 1,
+    "explanation": "Print/headless mode lets Claude Code be scripted in pipelines (triage, fixes, reviews). Pair it with permission settings to constrain exactly what it may do in automation."
+  },
+
+  {
+    "id": "mcp-architecture",
+    "domain": "mcp",
+    "difficulty": "beginner",
+    "question": "Which describes the MCP architecture?",
+    "options": [
+      "A host runs an MCP client that connects to one or more MCP servers exposing capabilities",
+      "Servers connect directly to each other with no client",
+      "It is a proprietary Anthropic-only API",
+      "It replaces the need for any tools"
+    ],
+    "answer": 0,
+    "explanation": "MCP is an open client–server standard. The host (e.g. Claude Code) runs a client that connects to servers — 'USB-C for AI tools': write a server once, use it from any MCP-compatible client."
+  },
+  {
+    "id": "mcp-primitives",
+    "domain": "mcp",
+    "difficulty": "intermediate",
+    "question": "What are the three primitives an MCP server can expose?",
+    "options": [
+      "Models, tokens, and embeddings",
+      "Tools, resources, and prompts",
+      "Files, folders, and links",
+      "Agents, hooks, and commands"
+    ],
+    "answer": 1,
+    "explanation": "Tools are model-callable actions, resources are read-only data the server publishes, and prompts are reusable templates (often surfaced as slash commands)."
+  },
+  {
+    "id": "mcp-transports",
+    "domain": "mcp",
+    "difficulty": "intermediate",
+    "question": "Which transport is most appropriate for a local MCP server run as a subprocess?",
+    "options": [
+      "HTTP / streamable HTTP",
+      "stdio",
+      "FTP",
+      "WebRTC"
+    ],
+    "answer": 1,
+    "explanation": "stdio runs the server as a local subprocess and communicates over stdin/stdout — ideal for local tools. HTTP (streamable) suits remote, hosted, or multi-user servers."
+  },
+  {
+    "id": "mcp-tool-design",
+    "domain": "mcp",
+    "difficulty": "advanced",
+    "question": "Which is a hallmark of good MCP tool design?",
+    "options": [
+      "One giant tool that does everything",
+      "Single-purpose tools with clear descriptions, typed inputs, helpful errors, and least privilege",
+      "Tools with no descriptions to save tokens",
+      "Always granting full system access for flexibility"
+    ],
+    "answer": 1,
+    "explanation": "A tool should do one clear thing, with a description written for the model (its only guide to when to use it), a typed JSON schema for inputs, actionable error messages, and least-privilege access."
+  },
+
+  {
+    "id": "context-budget",
+    "domain": "context",
+    "difficulty": "beginner",
+    "question": "Why is the context window described as a 'budget'?",
+    "options": [
+      "It costs money per token only at night",
+      "Everything the model can see shares one finite window, so noise causes overflow or distraction",
+      "It resets only once per month",
+      "It is unlimited but slow"
+    ],
+    "answer": 1,
+    "explanation": "System prompt, CLAUDE.md, conversation, and tool results all share one finite window. Too much content causes overflow (truncation) and even irrelevant content causes distraction/rot, degrading quality."
+  },
+  {
+    "id": "context-compaction",
+    "domain": "context",
+    "difficulty": "intermediate",
+    "question": "What's a good practice so important facts survive conversation compaction?",
+    "options": [
+      "Repeat them in every message",
+      "Persist durable facts to files like CLAUDE.md rather than relying on the live transcript",
+      "Never start long conversations",
+      "Disable compaction entirely"
+    ],
+    "answer": 1,
+    "explanation": "Compaction summarizes earlier turns to save space. Durable facts stored in CLAUDE.md or files survive compaction, whereas details left only in the raw transcript may be summarized away."
+  },
+  {
+    "id": "context-handoffs",
+    "domain": "context",
+    "difficulty": "intermediate",
+    "question": "What should a sub-agent return on a multi-agent handoff?",
+    "options": [
+      "Its entire transcript so nothing is lost",
+      "Only its distilled result, per a clear contract — not its full transcript",
+      "A request for more tokens",
+      "The orchestrator's original prompt"
+    ],
+    "answer": 1,
+    "explanation": "Hand off results, not transcripts. Returning only the conclusion (with a defined input/output contract) keeps the orchestrator's context clean and prevents noise and errors from propagating."
+  },
+  {
+    "id": "context-escalation",
+    "domain": "context",
+    "difficulty": "intermediate",
+    "question": "Which is a sound reliability pattern when an agent hits a failure?",
+    "options": [
+      "Retry forever until it works",
+      "Silently ignore the error and continue",
+      "Bounded retries for transient errors, then escalate when stuck or blocked",
+      "Immediately delete the project"
+    ],
+    "answer": 2,
+    "explanation": "Fail loud, retry transient failures a bounded number of times, then escalate to a human or higher-level agent when blocked or facing unresolved ambiguity — never loop forever or guess destructively."
+  }
+]
