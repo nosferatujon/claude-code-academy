@@ -13,7 +13,6 @@ const nav = [
   { href: '/lessons/', label: 'Lessons' },
   { href: '/exercises/', label: 'Exercises' },
   { href: '/exam/', label: 'Practice Exam' },
-  { href: '/progress/', label: 'Progress' },
 ];
 
 const path = Astro.url.pathname;
@@ -29,7 +28,6 @@ const isCurrent = (href: string) =>
     <meta name="description" content={description} />
     <title>{title} · Claude Code Academy</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <script is:inline src="/progress.js"></script>
   </head>
   <body>
     <header class="site">
@@ -50,7 +48,7 @@ const isCurrent = (href: string) =>
     <footer class="site">
       <div class="container">
         Claude Code Academy — an unofficial study companion for the Claude Certified Architect
-        (CCA-F) exam. Built with Claude Code. Progress is stored only in your browser.
+        (CCA-F) exam. Built with Claude Code.
       </div>
     </footer>
   </body>

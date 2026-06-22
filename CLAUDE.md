@@ -58,4 +58,3 @@ solution: |      # fenced Markdown, rendered client-side by marked
 - **Content slugs** come from filenames — use kebab-case.
 - **Quiz answers are in page source** — accepted trade-off for a backend-free architecture.
 - **No build-time randomization** — quiz shuffling is client-side only.
-- `public/progress.js` is loaded by `src/layouts/Base.astro` and exposes `window.Progress`; the dashboard listens for the `progress-change` custom event to repaint domain bars.

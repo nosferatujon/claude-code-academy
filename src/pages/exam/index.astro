@@ -161,7 +161,6 @@ const poolByDomain = Object.fromEntries(
 
       const total = cards.length;
       const pct = Math.round((correct / total) * 100);
-      window.Progress.saveExam({ correct, total, byDomain });
       showResult(correct, total, pct, byDomain);
     }
 

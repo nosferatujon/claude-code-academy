@@ -26,26 +26,4 @@ const { Content } = await render(lesson);
     <Content />
   </article>
 
-  <div class="done-toggle" data-slug={lesson.id} data-domain={lesson.data.domain} style="margin-top:2rem">
-    <button class="btn" data-action="toggle-lesson">Mark as read</button>
-  </div>
-
-  <script is:inline>
-    (function () {
-      const wrap = document.querySelector('.done-toggle');
-      const btn = wrap.querySelector('[data-action="toggle-lesson"]');
-      const slug = wrap.dataset.slug;
-      const domain = wrap.dataset.domain;
-      function paint() {
-        const done = window.Progress.isLessonRead(slug);
-        wrap.classList.toggle('is-done', done);
-        btn.textContent = done ? '✓ Read' : 'Mark as read';
-      }
-      btn.addEventListener('click', () => {
-        window.Progress.toggleLesson(slug, domain);
-        paint();
-      });
-      paint();
-    })();
-  </script>
 </Base>

@@ -28,11 +28,10 @@ exercises.sort((a, b) => a.data.order - b.data.order);
         )}
         <div class="grid cols-2">
           {items.map((e) => (
-            <a class="card" href={`/exercises/${e.id}/`} data-ex-slug={e.id}>
+            <a class="card" href={`/exercises/${e.id}/`}>
               <div class="meta-row" style="margin-top:0">
                 <span class={`badge ${e.data.difficulty}`}>{e.data.difficulty}</span>
                 <span>{e.data.estMinutes} min</span>
-                <span class="ex-done" data-ex-slug={e.id} style="margin-left:auto;color:var(--green)"></span>
               </div>
               <h3 style="margin-top:0.25rem">{e.data.title}</h3>
               <p class="muted">{e.data.intro}</p>
@@ -43,13 +42,4 @@ exercises.sort((a, b) => a.data.order - b.data.order);
     );
   })}
 
-  <script is:inline>
-    function paintDone() {
-      document.querySelectorAll('.ex-done').forEach((el) => {
-        el.textContent = window.Progress.isExerciseDone(el.dataset.exSlug) ? '✓ done' : '';
-      });
-    }
-    paintDone();
-    document.addEventListener('progress-change', paintDone);
-  </script>
 </Base>

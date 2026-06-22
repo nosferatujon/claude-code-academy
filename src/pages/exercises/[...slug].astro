@@ -70,26 +70,4 @@ const solutionHtml = marked.parse(d.solution);
     <div class="body" set:html={solutionHtml} />
   </details>
 
-  <div class="done-toggle" data-slug={exercise.id} data-domain={d.domain} style="margin-top:2rem">
-    <button class="btn" data-action="toggle-ex">Mark complete</button>
-  </div>
-
-  <script is:inline>
-    (function () {
-      const wrap = document.querySelector('.done-toggle');
-      const btn = wrap.querySelector('[data-action="toggle-ex"]');
-      const slug = wrap.dataset.slug;
-      const domain = wrap.dataset.domain;
-      function paint() {
-        const done = window.Progress.isExerciseDone(slug);
-        wrap.classList.toggle('is-done', done);
-        btn.textContent = done ? '✓ Completed' : 'Mark complete';
-      }
-      btn.addEventListener('click', () => {
-        window.Progress.toggleExercise(slug, domain);
-        paint();
-      });
-      paint();
-    })();
-  </script>
 </Base>
