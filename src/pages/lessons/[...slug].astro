@@ -6,7 +6,7 @@ import { DOMAINS, domainName } from '../../data/domains';
 const DOMAIN_ORDER = DOMAINS.map((d) => d.id);
 
 export async function getStaticPaths() {
-  const domainOrder = ['agentic', 'prompting', 'workflows', 'mcp', 'context'];
+  const domainOrder = DOMAINS.map((d) => d.id);
   const all = await getCollection('lessons');
   const sorted = [...all].sort((a, b) => {
     const di = domainOrder.indexOf(a.data.domain) - domainOrder.indexOf(b.data.domain);

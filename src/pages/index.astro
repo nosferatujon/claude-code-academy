@@ -13,14 +13,14 @@ lessons.sort((a, b) => a.data.order - b.data.order);
 
 <Base title="Home">
   <section class="course-hero">
-    <div class="course-hero__eyebrow">CCA-F Certification Prep</div>
+    <div class="course-hero__eyebrow">Claude Certified Architect &mdash; Foundations (CCA-F) Exam Prep</div>
     <h1>Claude Code Academy</h1>
     <p class="lead">
-      Master Claude Code and prepare for the Claude Certified Architect&nbsp;&mdash;&nbsp;Foundations
-      exam through structured lessons, hands-on exercises, and practice exams.
+      Master Claude Code and prepare for the CCA-F certification exam through structured lessons,
+      hands-on exercises, and practice exams.
     </p>
     <div class="toolbar" style="justify-content:center">
-      <a class="btn" href="/lessons/agentic-architecture/">Start Learning</a>
+      <a class="btn" href="/lessons/claude-code-workflows/">Start Learning</a>
       <a class="btn secondary" href="/exam/">Practice Exam</a>
     </div>
     <div class="course-stats">
@@ -29,6 +29,23 @@ lessons.sort((a, b) => a.data.order - b.data.order);
       <div class="course-stat"><span>{exercises.length}</span>Exercises</div>
       <div class="course-stat"><span>{quiz.length}</span>Quiz Questions</div>
     </div>
+  </section>
+
+  <section class="what-is-cc">
+    <h2 style="margin-top:0">What is Claude Code?</h2>
+    <p class="muted">
+      Claude Code is Anthropic&rsquo;s official command-line tool (and IDE extension) that brings
+      Claude directly into your codebase. Instead of copying code into a chat window, Claude Code
+      reads your files, makes edits, runs commands, and works through multi-step tasks
+      autonomously &mdash; from your terminal or editor.
+    </p>
+    <p class="muted">
+      This course is for developers who use Claude Code (or plan to) and want to understand how it
+      works deeply enough to use it well &mdash; and optionally prepare for the
+      <strong>CCA-F (Claude Certified Architect &mdash; Foundations)</strong> certification. No prior
+      Claude Code experience is required, but you should be comfortable with the command line and
+      basic software development.
+    </p>
   </section>
 
   <h2>Course Curriculum</h2>
@@ -44,10 +61,13 @@ lessons.sort((a, b) => a.data.order - b.data.order);
             <span class="badge weight">{d.weight}% of exam</span>
             {d.practiceable
               ? <span class="badge beginner">Hands-on</span>
-              : <span class="badge concept">Concept-focused</span>}
+              : <span class="badge concept">Architecture-focused</span>}
           </div>
           <h3>{d.name}</h3>
           <p class="muted" style="margin:0 0 0.25rem;font-size:0.88rem">{d.blurb}</p>
+          <ul class="module-objectives">
+            {d.objectives.map((o) => <li>{o}</li>)}
+          </ul>
           <ul class="module-items">
             {domainLessons.map((l) => (
               <li class="module-item module-item--lesson">

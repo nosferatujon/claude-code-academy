@@ -126,6 +126,11 @@ If a downstream program is parsing the output, even one extra line of prose will
 
 ## `tool_use` for structured output — the most reliable method
 
+<div class="callout callout--api">
+  <strong>Exam knowledge — Claude API</strong>
+  <code>tool_use</code> and <code>tool_choice</code> are parameters you set when making direct Claude API calls. They are not configurable from the Claude Code CLI. The exam tests these as structured output techniques — you need to understand what they do and when to use them, even if you don't write the API code yourself.
+</div>
+
 For production pipelines that require structured output, using `tool_use` with a JSON schema is the most reliable approach — it eliminates JSON syntax errors entirely. Instead of asking Claude to "write JSON," you define a tool with a schema, and Claude fills in the fields by making a tool call.
 
 The schema enforces structure at the API level. Claude doesn't need to format JSON — it just populates named fields.
@@ -182,6 +187,11 @@ When you need consistent results, structure your prompt in this order:
 You don't need all five sections for every prompt — a simple task just needs a clear instruction. But for complex or repeated tasks, this structure prevents ambiguity.
 
 ## Message Batches API
+
+<div class="callout callout--api">
+  <strong>Exam knowledge — Claude API</strong>
+  The Message Batches API is a direct Claude API feature — it is not available through the Claude Code CLI. The exam tests this as a cost-optimization strategy for offline, high-volume workloads. You need to know when to use it and when not to.
+</div>
 
 When you need to run many independent AI tasks, the Message Batches API lets you submit them together at a significant cost reduction.
 

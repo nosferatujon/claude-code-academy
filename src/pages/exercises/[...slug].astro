@@ -7,7 +7,7 @@ import { DOMAINS, domainName } from '../../data/domains';
 const DOMAIN_ORDER = DOMAINS.map((d) => d.id);
 
 export async function getStaticPaths() {
-  const domainOrder = ['agentic', 'prompting', 'workflows', 'mcp', 'context'];
+  const domainOrder = DOMAINS.map((d) => d.id);
   const allExercises = await getCollection('exercises');
   const allLessons = await getCollection('lessons');
 

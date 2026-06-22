@@ -48,6 +48,11 @@ flowchart TD
 
 ## stop_reason mechanics
 
+<div class="callout callout--sdk">
+  <strong>Exam knowledge — Claude Agent SDK</strong>
+  This section describes API-level loop mechanics. When you use Claude Code as a CLI tool, this loop runs for you automatically — you never write this code yourself. The exam tests whether you understand how it works under the hood so you can reason about agent behavior and avoid common anti-patterns.
+</div>
+
 This is one of the most heavily tested topics on the exam. The agentic loop in the Claude Agent SDK doesn't guess when to stop — it inspects the `stop_reason` field on every API response and uses that to decide what to do next.
 
 There are two primary stop reasons to know:
@@ -137,6 +142,11 @@ flowchart TD
 **Real example:** An orchestrator is asked to audit a codebase for security issues. It spawns one worker per directory, each scanning independently. Workers return findings; the orchestrator merges and ranks them.
 
 ## The Task tool and subagent spawning
+
+<div class="callout callout--sdk">
+  <strong>Exam knowledge — Claude Agent SDK</strong>
+  The <code>Task</code> tool and <code>AgentDefinition</code> are Claude Agent SDK concepts for building custom multi-agent systems with direct API access. In Claude Code, you observe orchestration behavior (for example in plan mode), but you don't configure <code>allowedTools</code> or spawn subagents programmatically yourself. The exam tests this as foundational architecture knowledge.
+</div>
 
 The `Task` tool is the specific mechanism in the Claude Agent SDK for spawning subagents from a coordinator.
 
