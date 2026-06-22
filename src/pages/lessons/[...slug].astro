@@ -140,6 +140,13 @@ const progressPct = Math.round(((lessonIndex + 1) / lessonTotal) * 100);
     .mermaid svg { max-width: 100%; height: auto; }
   </style>
 
+  <script is:inline define:vars={{ _lessonSlug: lesson.id, _lessonTitle: lesson.data.title }}>
+    try {
+      localStorage.setItem('cca-last-lesson',
+        JSON.stringify({ slug: _lessonSlug, title: _lessonTitle, url: `/lessons/${_lessonSlug}/` }));
+    } catch (_) {}
+  </script>
+
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
     mermaid.initialize({

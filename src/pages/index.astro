@@ -48,6 +48,44 @@ lessons.sort((a, b) => a.data.order - b.data.order);
     </p>
   </section>
 
+  <div id="continue-card" class="card" style="display:none;margin-bottom:2rem">
+    <p style="margin:0 0 0.1rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim)">Continue where you left off</p>
+    <div id="continue-links" style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.6rem"></div>
+    <button id="continue-reset" style="margin-top:0.75rem;background:none;border:none;color:var(--text-dim);font-size:0.8rem;cursor:pointer;padding:0">Reset progress</button>
+  </div>
+
+  <script>
+    (function () {
+      var card = document.getElementById('continue-card');
+      var linksEl = document.getElementById('continue-links');
+      var resetBtn = document.getElementById('continue-reset');
+      var KEYS = ['cca-last-lesson', 'cca-last-exercise'];
+      var LABELS = ['Lesson', 'Exercise'];
+
+      function load() {
+        var items = [];
+        for (var i = 0; i < KEYS.length; i++) {
+          try {
+            var raw = localStorage.getItem(KEYS[i]);
+            if (raw) items.push({ label: LABELS[i], data: JSON.parse(raw) });
+          } catch (_) {}
+        }
+        if (items.length === 0) { card.style.display = 'none'; return; }
+        linksEl.innerHTML = items.map(function (it) {
+          return '<a class="btn secondary" href="' + it.data.url + '">' + it.label + ': ' + it.data.title + ' &rarr;</a>';
+        }).join('');
+        card.style.display = '';
+      }
+
+      resetBtn.addEventListener('click', function () {
+        KEYS.forEach(function (k) { try { localStorage.removeItem(k); } catch (_) {} });
+        card.style.display = 'none';
+      });
+
+      load();
+    })();
+  </script>
+
   <h2>Course Curriculum</h2>
 
   <div style="display:flex;flex-direction:column;gap:0.75rem">

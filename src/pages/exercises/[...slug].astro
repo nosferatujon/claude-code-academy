@@ -140,6 +140,13 @@ const solutionHtml = marked.parse(d.solution);
     <div class="body" set:html={solutionHtml} />
   </details>
 
+  <script is:inline define:vars={{ _exerciseSlug: exercise.id, _exerciseTitle: d.title }}>
+    try {
+      localStorage.setItem('cca-last-exercise',
+        JSON.stringify({ slug: _exerciseSlug, title: _exerciseTitle, url: `/exercises/${_exerciseSlug}/` }));
+    } catch (_) {}
+  </script>
+
   <!-- Prev / Next -->
   <nav class="course-nav" aria-label="exercise navigation">
     <div>
