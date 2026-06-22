@@ -90,6 +90,8 @@ Input: loading mcp server configuration
 Output:
 ```
 
+The blank `Output:` at the end is intentional — that's what you actually send to Claude. You supply the completed examples to establish the pattern, then leave the final output empty. Claude fills it in (`Loading MCP Server Configuration` here).
+
 Claude will imitate the pattern. Three examples is usually enough — the model learns the rule from demonstration.
 
 **Keep examples consistent:** if your examples contain a mistake, Claude will reproduce it.
