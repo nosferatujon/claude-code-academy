@@ -61,6 +61,7 @@ const poolByDomain = Object.fromEntries(
       count: document.getElementById('count'),
     };
     let current = [];
+    let seenIds = new Set();
 
     function shuffle(arr) {
       const a = arr.slice();
@@ -72,22 +73,32 @@ const poolByDomain = Object.fromEntries(
     }
 
     function pickQuestions(total) {
-      const byDomain = {};
-      for (const q of questions) (byDomain[q.domain] ||= []).push(q);
-      if (!total || total >= questions.length) return shuffle(questions);
+      const effectiveTotal = (!total || total >= questions.length) ? questions.length : total;
 
+      // Prefer questions not yet seen in this session.
+      let pool = questions.filter((q) => !seenIds.has(q.id));
+      if (pool.length < effectiveTotal) {
+        // Not enough unseen questions — reset and use the full set.
+        seenIds = new Set();
+        pool = questions.slice();
+      }
+
+      if (effectiveTotal >= pool.length) return shuffle(pool);
+
+      const byDomain = {};
+      for (const q of pool) (byDomain[q.domain] ||= []).push(q);
       const weightSum = Object.values(domainMeta).reduce((s, d) => s + d.weight, 0);
       let picked = [];
       for (const [id, meta] of Object.entries(domainMeta)) {
-        const pool = shuffle(byDomain[id] || []);
-        const n = Math.min(pool.length, Math.round((meta.weight / weightSum) * total));
-        picked.push(...pool.slice(0, n));
+        const domPool = shuffle(byDomain[id] || []);
+        const n = Math.min(domPool.length, Math.round((meta.weight / weightSum) * effectiveTotal));
+        picked.push(...domPool.slice(0, n));
       }
       // Top up / trim to exact count from whatever remains.
       const chosen = new Set(picked);
-      const remaining = shuffle(questions.filter((q) => !chosen.has(q)));
-      while (picked.length < total && remaining.length) picked.push(remaining.pop());
-      return shuffle(picked.slice(0, total));
+      const remaining = shuffle(pool.filter((q) => !chosen.has(q)));
+      while (picked.length < effectiveTotal && remaining.length) picked.push(remaining.pop());
+      return shuffle(picked.slice(0, effectiveTotal));
     }
 
     function render() {
@@ -121,6 +132,7 @@ const poolByDomain = Object.fromEntries(
     function start() {
       const total = parseInt(els.count.value, 10);
       current = pickQuestions(total);
+      current.forEach((q) => seenIds.add(q.id));
       render();
       els.setup.style.display = 'none';
       els.result.style.display = 'none';
