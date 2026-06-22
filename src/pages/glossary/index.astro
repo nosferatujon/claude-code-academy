@@ -87,12 +87,12 @@ const terms = [
     definition:
       'The communication channel between an MCP client and server. <code>stdio</code> runs the server as a local subprocess on the same machine (good for personal developer tools). HTTP runs it over the network (good for shared team services that multiple people need to access).',
   },
-].sort((a, b) => a.term.localeCompare(b.term));
+];
 ---
 
 <Base title="Glossary" description="Key terms for Claude Code and AI development, explained for beginners.">
 
-  <nav class="breadcrumb" aria-label="breadcrumb" style="margin-bottom:1.5rem">
+  <nav class="breadcrumb" aria-label="breadcrumb">
     <a href="/">Home</a>
     <span class="breadcrumb__sep">/</span>
     <a href="/lessons/">Curriculum</a>
@@ -109,10 +109,9 @@ const terms = [
 
   <div style="display:flex;flex-direction:column;gap:0.75rem">
     {terms.map((t) => (
-      <div class="card" id={t.term.toLowerCase().replace(/[^a-z0-9]+/g, '-')}>
+      <div class="card" id={t.term.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')}>
         <div style="display:flex;align-items:baseline;gap:0.75rem;margin-bottom:0.4rem;flex-wrap:wrap">
           <strong style="font-size:1.05rem">{t.term}</strong>
-          <span class="badge concept">term</span>
         </div>
         <p style="margin:0;color:var(--text-dim);font-size:0.93rem" set:html={t.definition} />
       </div>
