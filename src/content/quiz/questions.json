@@ -199,15 +199,15 @@
     "id": "mcp-architecture",
     "domain": "mcp",
     "difficulty": "beginner",
-    "question": "Your company builds a customer data MCP server that Claude Code uses to query customer records. Three months later, a partner team wants to use the same server from their MCP-compatible IDE (not Claude). Your manager says you'll need to rebuild the server for the other tool. Is your manager correct?",
+    "question": "Your team's customer-data MCP server has been running in production for six months with Claude Code. A partner team using a different AI coding assistant wants to query the same customer data — their platform documentation lists MCP client support. Your manager proposes building a dedicated server for the partner team to avoid 'cross-platform integration risk.' A teammate argues the existing server already supports this without any changes. A third colleague says it will work only if you switch from stdio to HTTP transport. Who is right?",
     "options": [
-      "Yes — MCP servers are tightly coupled to the AI application they were built for",
-      "No — MCP is an open protocol. Any MCP-compatible client can connect to the same server regardless of which AI application it runs in",
-      "Partially — you'll need a compatibility layer, but the core server logic can be reused",
-      "Yes, but only because you use stdio transport; rebuilding with HTTP would make it shareable"
+      "The manager — each AI platform interprets MCP tool schemas differently, requiring platform-specific server implementations",
+      "The teammate — MCP is an open protocol and any MCP-compatible client connects to the same server regardless of which AI platform it runs in, with no rebuilding needed",
+      "The third colleague — the existing server logic is reusable, but the transport must match what the partner's platform expects",
+      "All three have a point — you need a new server, built with HTTP transport, to serve both platforms simultaneously"
     ],
     "answer": 1,
-    "explanation": "MCP's design goal is exactly this interoperability. The server exposes a standard MCP interface; any MCP-compatible client connects to it. This is the 'write once, use anywhere' promise of the protocol — no rebuilding, no compatibility layers needed."
+    "explanation": "MCP's core design goal is client-agnostic interoperability. Any MCP-compatible client speaks the same protocol to the same server regardless of AI platform. The 'build a separate server per platform' approach directly contradicts MCP's purpose. Transport choice affects local vs. remote access, not which AI platform can connect — an existing HTTP or stdio server is equally accessible to any compliant client."
   },
   {
     "id": "mcp-primitives",
@@ -353,15 +353,15 @@
     "id": "workflows-slash-command-scope",
     "domain": "workflows",
     "difficulty": "beginner",
-    "question": "You want to create a custom /review slash command that runs your team's standard code review checklist. This command should be available to every developer when they clone or pull the repository. Where should you create this command file?",
+    "question": "A developer creates a /review slash command with the team's code review checklist and commits the changes. Two weeks later, three new teammates join, clone the repository, and report the /review command doesn't exist in their Claude Code. The original developer confirms it still works on their machine. Where was the command file created, and what should be done differently?",
     "options": [
-      "In the .claude/commands/ directory in the project repository",
-      "In ~/.claude/commands/ in each developer's home directory",
-      "In the CLAUDE.md file at the project root",
-      "In a .claude/config.json file with a commands array"
+      "The command was created in .claude/commands/ in the project root — it should be committed to git for other developers to have it, which means it may not have been staged and committed properly",
+      "The command was created in ~/.claude/commands/ on the developer's machine — that location is personal and never version-controlled. It must be created in .claude/commands/ within the project repository so it is committed to git and available on every clone.",
+      "The command needs to be registered in .claude/settings.json before other team members can see it",
+      "Slash commands must be individually installed on each developer's machine using a CLI install command"
     ],
-    "answer": 0,
-    "explanation": "Project-scoped custom slash commands should be stored in .claude/commands/ within the repository. These commands are version-controlled and automatically available to all developers when they clone or pull. Option B is for personal commands not shared via version control. Option C is for project instructions, not command definitions. Option D describes a configuration mechanism that doesn't exist in Claude Code."
+    "answer": 1,
+    "explanation": "~/.claude/commands/ is user-scope: personal, machine-specific, and never committed to git. .claude/commands/ in the project root is project-scope: committed to git and shared via version control with anyone who clones. Creating a shared team command in the user scope is the most common slash command sharing mistake — it works locally but is invisible to everyone else."
   },
   {
     "id": "workflows-plan-mode-complex",
@@ -437,15 +437,15 @@
     "id": "workflows-headless-flag",
     "domain": "workflows",
     "difficulty": "beginner",
-    "question": "Your pipeline script runs `claude \"Analyze this pull request for security issues\"` but the job hangs indefinitely. What's the correct approach?",
+    "question": "Your CI pipeline runs claude \"Analyze this pull request for security issues\" as a step, but the job always times out after 10 minutes. The runner logs show Claude started but never produced output. A teammate suggests it is waiting for interactive input since there is no terminal. Another suggests setting CLAUDE_HEADLESS=true. A third says to add --batch. Which fix is correct?",
     "options": [
-      "Add the -p flag: claude -p \"Analyze this pull request for security issues\"",
-      "Set the environment variable CLAUDE_HEADLESS=true before running the command",
-      "Redirect stdin from /dev/null: claude \"Analyze this pull request for security issues\" < /dev/null",
-      "Add the --batch flag: claude --batch \"Analyze this pull request for security issues\""
+      "Add -p (or --print): claude -p \"Analyze this pull request for security issues\" — this runs Claude in non-interactive mode, processes the prompt, prints the result to stdout, and exits",
+      "Set CLAUDE_HEADLESS=true before running — this environment variable signals Claude Code to skip interactive prompts",
+      "Redirect stdin from /dev/null to signal no terminal is attached: claude \"...\" < /dev/null",
+      "Add --batch: claude --batch \"Analyze this pull request for security issues\" — batch mode disables interactive prompts in CI"
     ],
     "answer": 0,
-    "explanation": "The -p (or --print) flag is the documented way to run Claude Code in non-interactive mode. It processes the prompt, outputs the result to stdout, and exits. The other options reference non-existent features (CLAUDE_HEADLESS, --batch) or use workarounds that don't properly address Claude Code's command syntax."
+    "explanation": "The -p (or --print) flag is the documented way to run Claude Code non-interactively. It processes the prompt, writes the result to stdout, and exits — exactly what a CI pipeline needs. CLAUDE_HEADLESS and --batch are not valid Claude Code features. Redirecting stdin from /dev/null is a shell workaround that does not correctly address how Claude Code handles interactive mode."
   },
   {
     "id": "prompting-batch-api",
@@ -507,57 +507,57 @@
     "id": "agentic-subagent-context",
     "domain": "agentic",
     "difficulty": "intermediate",
-    "question": "An orchestrator spawns a subagent to draft a report section. The orchestrator's context contains extensive background research. What does the subagent receive by default?",
+    "question": "An orchestrator has spent 2 hours researching a topic and accumulated extensive findings in its context. It spawns a subagent to draft an executive summary using those findings. The subagent returns a generic, surface-level summary that ignores all the specific data points the orchestrator gathered. No errors occurred. What is the most likely cause?",
     "options": [
-      "The full contents of the orchestrator's context window automatically",
-      "Only what the orchestrator explicitly passes in the subagent's prompt or input",
-      "A read-only reference to the orchestrator's conversation history",
-      "All tool results from the orchestrator's session"
+      "The subagent's model tier is lower than the orchestrator's, resulting in weaker synthesis quality",
+      "The orchestrator did not explicitly pass its research findings to the subagent — subagents do not inherit the parent's context window and start fresh with only what is explicitly provided in their input",
+      "The subagent's context window was too small to hold all the research and it silently truncated the input",
+      "The orchestrator needs to run in the same session as the subagent for context sharing to work"
     ],
     "answer": 1,
-    "explanation": "Subagents do not inherit the parent's context window. They start fresh with only what the orchestrator explicitly provides. This isolation prevents noise propagation but requires the orchestrator to package necessary context deliberately."
+    "explanation": "Subagents do not inherit the parent's context window — they start with only what the orchestrator explicitly passes. If the orchestrator spawned the subagent with a prompt like 'draft an executive summary' without including the actual research, the subagent had nothing to work from. This isolation is by design to prevent noise propagation, but it requires the orchestrator to deliberately package and pass relevant context."
   },
   {
     "id": "agentic-task-tool-allowed",
     "domain": "agentic",
     "difficulty": "advanced",
-    "question": "You're using the Task tool to spawn a subagent. The subagent needs to read files and run tests, but should not make network calls. Which parameter restricts its capabilities?",
+    "question": "You spawn a subagent using the Task tool to analyze a local codebase for security vulnerabilities. After the run, your security team reports the subagent made outbound HTTP requests and uploaded a findings summary to an external endpoint — something it should never have done. What change to the Task tool call would have prevented this?",
     "options": [
-      "maxTokens — set it low enough to prevent network operations",
-      "allowedTools — pass an explicit list containing only the tools the subagent should have access to",
-      "systemPrompt — include a sentence saying 'do not make network calls'",
-      "timeout — a short timeout prevents the subagent from completing network operations"
+      "Set timeout to a short value so the subagent cannot complete network operations before it is terminated",
+      "Add a system prompt instruction: 'Do not make any outbound network requests or upload data externally'",
+      "Pass an explicit allowedTools list containing only the tools the subagent needs — excluding any network-capable tools — so it cannot invoke them regardless of what it decides",
+      "Set maxTokens low enough that the subagent runs out of budget before reaching network tool calls"
     ],
-    "answer": 1,
-    "explanation": "The allowedTools parameter on the Task tool explicitly limits which tools the subagent can invoke, providing hard enforcement. System prompt instructions (C) are probabilistic. maxTokens and timeout (A, D) constrain compute, not capabilities."
+    "answer": 2,
+    "explanation": "The allowedTools parameter on the Task tool is a hard capability boundary enforced by the harness — the model cannot invoke tools not on the list regardless of its reasoning. System prompt instructions (B) are probabilistic and insufficient when preventing network exfiltration. Timeout (A) and maxTokens (D) constrain compute resources, not which tools are available."
   },
   {
     "id": "agentic-fork-session",
     "domain": "agentic",
     "difficulty": "advanced",
-    "question": "Which AgentDefinition pattern is most appropriate when you want a subagent to inherit the parent's full context for exploration without the parent being affected by the subagent's output?",
+    "question": "You ask a subagent to prototype an alternative database indexing strategy. It needs full knowledge of your current schema and conversation history to generate relevant code. After it finishes, you find its experimental writes scattered across three schema files in your working tree — you must manually revert them before continuing your main task. Which approach would have let the subagent access your context while keeping its changes isolated from your session?",
     "options": [
-      "Spawn a new agent with an empty context and pass a summary of relevant facts",
-      "Use fork_session to create a branched copy of the current session that runs independently",
-      "Have the subagent write its output to a file and have the parent read it afterward",
-      "Run the subagent synchronously inside the parent's own context window"
+      "Spawn the subagent with an empty context and pass a written summary of the relevant schema facts as its input",
+      "Use fork_session to create a branched copy of the current session — the subagent inherits existing context but its actions do not propagate back to the parent",
+      "Have the subagent write all experimental changes to a temporary directory and manually cherry-pick what you want",
+      "Restrict the subagent's allowed-tools to exclude Write and Edit so it can only read and propose changes in text"
     ],
     "answer": 1,
-    "explanation": "fork_session creates an isolated branch of the current session, giving the subagent access to existing context while shielding the parent from side effects of the subagent's exploration. Option A loses context. Options C and D do not achieve the isolation goal."
+    "explanation": "fork_session creates an isolated branch of the session, giving the subagent full access to existing context while shielding the parent from side effects. Option A loses context by starting empty, defeating the purpose. Option C is a manual workaround, not architectural isolation. Option D prevents writes entirely — but an exploration subagent may legitimately need to prototype changes; fork_session allows writes that simply don't propagate back."
   },
   {
     "id": "agentic-session-resume",
     "domain": "agentic",
     "difficulty": "beginner",
-    "question": "A long-running automation task was interrupted mid-way. Which flag allows you to continue from where the session left off?",
+    "question": "Your overnight database migration ran for 4 hours before a network failure terminated Claude Code at step 31 of 45. The CI runner logs captured the session ID. You have another session from earlier in the week with a similar migration. You need to pick up from exactly step 31 — not restart from scratch, and not accidentally resume the older session. Which command achieves this?",
     "options": [
-      "--continue, which automatically picks up the most recent session",
-      "--resume <session-id>, which restores a specific previous session",
-      "--retry, which replays the entire session from the beginning",
-      "--restore, which reloads the last checkpoint file"
+      "--continue, which resumes the most recent session regardless of session ID — but you cannot control which session it picks up",
+      "--resume <session-id>, which restores the specific session by ID so the agent continues from exactly where it stopped",
+      "--retry, which replays all completed tool calls from the beginning of the specified session",
+      "--restore <session-id>, which reloads session state from a checkpoint file on disk"
     ],
     "answer": 1,
-    "explanation": "--resume <session-id> restores a specific session so the agent can continue from where it left off. --continue can resume the most recent session. --retry and --restore are not valid Claude Code flags."
+    "explanation": "--resume <session-id> is the right choice when you have a specific session to return to — especially when it is not the most recent one. --continue resumes the most recent session, which could accidentally pick up the wrong session if others ran since. --retry and --restore are not valid Claude Code flags."
   },
   {
     "id": "agentic-least-privilege",
@@ -633,29 +633,29 @@
     "id": "workflows-prompt-chaining",
     "domain": "workflows",
     "difficulty": "intermediate",
-    "question": "What distinguishes prompt chaining from dynamic decomposition?",
+    "question": "Your team is building two AI workflows. Workflow A processes job applications: every application always goes through the same four steps — extract details, check requirements, score fit, generate feedback. Workflow B handles customer service requests that vary widely — some need a refund, some need technical help, some need account changes — and the right steps only become clear after reading the request. Which design approach fits each workflow, and why does the distinction matter?",
     "options": [
-      "Prompt chaining uses multiple models; dynamic decomposition uses only one",
-      "In prompt chaining the sequence of steps is fixed at design time; in dynamic decomposition the agent decides at runtime which steps to take based on intermediate results",
-      "Prompt chaining always uses parallel execution; dynamic decomposition is always sequential",
-      "They are synonyms for the same technique"
+      "Both should use dynamic decomposition — it is strictly more powerful than fixed pipelines and handles both predictable and unpredictable tasks equally well",
+      "Workflow A suits prompt chaining (fixed step sequence designed upfront); Workflow B suits dynamic decomposition (agent decides steps at runtime based on the request). The distinction matters because fixed pipelines are predictable and auditable; dynamic agents are flexible but harder to debug and control.",
+      "Both should use prompt chaining — dynamic decomposition is only needed when processing more than 1,000 requests per day",
+      "Workflow A suits dynamic decomposition because the steps can be parallelised; Workflow B suits prompt chaining because the sequence is determined by business rules"
     ],
     "answer": 1,
-    "explanation": "Prompt chaining is a static pipeline where you design the step sequence in advance. Dynamic decomposition lets the agent evaluate results and adapt its plan at runtime, which is more flexible but harder to predict and debug."
+    "explanation": "Prompt chaining is a static pipeline where the step sequence is fixed at design time — ideal for Workflow A where every job application follows the same process. Dynamic decomposition lets the agent evaluate intermediate results and decide what to do next — necessary for Workflow B where the right actions depend on what the request actually contains. The distinction matters operationally: fixed pipelines are easy to monitor, test, and audit; dynamic agents are more capable but produce less predictable execution paths."
   },
   {
     "id": "workflows-output-format-json",
     "domain": "workflows",
     "difficulty": "intermediate",
-    "question": "A CI script needs to parse Claude's output programmatically to extract file paths and severity scores. Which flag should be used?",
+    "question": "Your CI pipeline uses jq to extract file paths and severity scores from Claude's security review output. It works on 65% of runs but fails on the rest with 'parse error: Invalid numeric literal'. Inspecting failing runs, Claude sometimes opens with 'Based on my analysis of the diff, here are the issues:' before the JSON object, causing jq to receive non-JSON input. What is the most reliable fix?",
     "options": [
-      "--verbose, to get detailed human-readable output",
-      "--output-format json, to get structured machine-parseable output",
-      "--print, to suppress the interactive UI",
-      "--silent, to output only the final answer with no metadata"
+      "Add a system prompt rule: 'Always begin your response with the opening { character and include no text before the JSON object'",
+      "Add --output-format json to the claude command — this produces structured machine-parseable JSON as a contract, not dependent on the model choosing to format its response a certain way",
+      "Post-process the output with sed to strip any text before the first { character before passing to jq",
+      "Use --print (-p) to suppress the interactive UI and get plain text output without the conversational wrapper"
     ],
     "answer": 1,
-    "explanation": "--output-format json produces structured JSON output that CI scripts can parse reliably. --print (-p) enables non-interactive mode but outputs plain text. --verbose and --silent control verbosity, not format."
+    "explanation": "--output-format json produces structured JSON output as a hard contract — it does not depend on the model deciding to begin with JSON. System prompt instructions (A) are probabilistic and fail intermittently, which explains the 35% failure rate. Post-processing (C) is a fragile workaround that breaks on edge cases like JSON appearing in an explanatory sentence. --print (-p) enables non-interactive mode but does not change the output format."
   },
   {
     "id": "workflows-session-isolation-ci",
@@ -675,71 +675,71 @@
     "id": "workflows-grep-vs-glob",
     "domain": "workflows",
     "difficulty": "beginner",
-    "question": "An agent needs to perform two tasks: (1) find all files in the project that import 'lodash', and (2) find all TypeScript test files ending in .test.ts. Which tools should the agent use for each task respectively?",
+    "question": "An agent needs to (1) find all source files that import 'lodash' and (2) find all TypeScript test files ending in .test.ts. It runs Glob('import.*lodash') for task (1) and Grep('**/*.test.ts') for task (2). Task (1) returns no results despite lodash being used widely. Task (2) returns matching line content instead of a list of file paths. Why did both fail?",
     "options": [
-      "Grep for both — Grep searches file contents and can also match file paths",
-      "Grep for (1) because it searches file contents for the import statement; Glob for (2) because it matches files by path pattern",
-      "Glob for both — Glob finds files whether by name or by their contents",
-      "Bash with find commands for both — the built-in tools are not capable of these tasks"
+      "Glob and Grep are interchangeable but require a file-type flag to operate correctly on TypeScript projects",
+      "The agent swapped the tools: Glob matches files by path pattern — it cannot search file contents. Grep searches file contents for a text pattern — it returns matching lines, not file names. Grep should find the import statement; Glob should find the .test.ts files.",
+      "Glob does not support regex patterns, so 'import.*lodash' is interpreted as a literal string and finds nothing",
+      "Both tools require the search to be anchored to a directory — omitting the path argument causes both to return incorrect results"
     ],
     "answer": 1,
-    "explanation": "Grep searches file contents for a pattern — ideal for finding import statements or any text inside files. Glob matches file paths against a pattern — ideal for finding files by name or extension. These are complementary tools with distinct use cases. Using Grep for path matching or Glob for content searching misuses both."
+    "explanation": "Glob matches files by path pattern — it has no ability to inspect file contents, so Glob('import.*lodash') searches for files named like 'import.something.lodash' and finds none. Grep searches file contents for a regex — it returns matching lines from files, not file names, so Grep('**/*.test.ts') searches for files containing the text '**/*.test.ts' inside them. The correct assignment: Grep for the import statement search, Glob for finding .test.ts files by extension."
   },
   {
     "id": "workflows-edit-vs-write",
     "domain": "workflows",
     "difficulty": "beginner",
-    "question": "You need to change a single function signature in a 500-line file. Which approach is preferable?",
+    "question": "Claude updated a function signature in a 500-line service file and the tests passed. An hour later, a teammate reports that two helper functions she added that afternoon are missing from the file. Checking git blame confirms her additions were on disk when Claude made its change but she hadn't committed yet. What caused the data loss?",
     "options": [
-      "Use Write to overwrite the entire file with the corrected version",
-      "Use Edit to make a targeted replacement of just the changed text",
-      "Use Read to load the file, then use Bash to sed-replace the content",
-      "Use Grep to find the line number, then manually reconstruct the file"
+      "Claude's change introduced a syntax error that deleted the surrounding code during compilation",
+      "Claude used the Write tool, which replaces the entire file with the content Claude read earlier — overwriting the teammate's uncommitted additions. The Edit tool makes targeted in-place replacements and would have preserved all code it did not explicitly change.",
+      "This is a git workflow problem — Claude cannot be responsible for uncommitted local changes that existed only on the teammate's machine",
+      "The teammate's editor auto-reformatted the file after Claude's change, removing the new functions as duplicates"
     ],
     "answer": 1,
-    "explanation": "Edit performs targeted in-place replacements — efficient, precise, and easy to review. Write overwrites the entire file, which is wasteful and error-prone for single-function changes. Bash/sed workarounds are unnecessary when Edit is available."
+    "explanation": "Write replaces the entire file contents with whatever Claude provides. Claude read the file before the teammate added her functions, so when Claude wrote its modified version it used the older snapshot — permanently overwriting her additions. Edit performs targeted string replacements within the existing file on disk, so it would have changed only the function signature while leaving all other code intact."
   },
   {
     "id": "workflows-skill-frontmatter",
     "domain": "workflows",
     "difficulty": "advanced",
-    "question": "A skill's SKILL.md has frontmatter: `context: fork`. What does this tell the harness?",
+    "question": "You invoke a skill to prototype an alternative authentication implementation. The skill needs access to your current codebase context to generate relevant code. After it completes, you notice the skill's experimental file edits appear in your working tree's git diff — you must manually revert them before continuing. You expected the skill's changes to be isolated from your main session. What SKILL.md frontmatter setting would have achieved this?",
     "options": [
-      "The skill should be forked to a separate process for performance",
-      "The skill should run in a forked session that inherits current context but is isolated from the parent",
-      "The skill can only be called from within another skill",
-      "The skill uses a forked copy of the model weights"
+      "allowed-tools: [] — an empty tools list prevents the skill from writing anything to disk",
+      "context: fork — instructs the harness to create a forked session that inherits current context but keeps the skill's actions isolated so they do not propagate back to the parent session",
+      "isolation: sandbox — runs the skill in a sandboxed environment without access to the working tree",
+      "context: clean — starts the skill with an empty context so it cannot reference or modify existing session files"
     ],
     "answer": 1,
-    "explanation": "`context: fork` instructs the harness to create a forked session that inherits the current conversation context while keeping the skill's actions isolated from the parent session. This is useful for exploratory tasks that shouldn't pollute the main session."
+    "explanation": "context: fork creates a branched copy of the session for the skill's execution. The skill inherits your codebase context — needed for generating relevant code — but its writes and changes are isolated and do not propagate back to the parent. context: clean (D) would start with an empty context, defeating the purpose. allowed-tools: [] (A) would prevent any useful work. isolation: sandbox is not a valid frontmatter value."
   },
   {
     "id": "workflows-allowed-tools-skill",
     "domain": "workflows",
     "difficulty": "advanced",
-    "question": "A skill's SKILL.md frontmatter includes `allowed-tools: [Read, Grep, Glob]`. What is the effect when this skill runs?",
+    "question": "Your code audit skill is designed to analyse code and report findings — it should never modify any files. During a post-incident review, you discover the skill edited a production configuration file during an audit run. The skill's prompt body says 'This skill is read-only. Do not use Edit, Write, or any file-modifying tools.' What change to the skill's SKILL.md would have enforced this hard constraint?",
     "options": [
-      "The skill can use any tool but prefers these three",
-      "The skill's session is restricted to only these tools, preventing it from making edits or running commands",
-      "These tools are disabled for the skill to prevent redundant operations",
-      "The allowed-tools field is informational only and does not restrict execution"
+      "Strengthen the prompt instruction: 'Under absolutely no circumstances may this skill use Edit or Write tools'",
+      "Add allowed-tools: [Read, Grep, Glob] to the SKILL.md frontmatter — the harness restricts the skill's session to exactly these tools, making Edit and Write unavailable to invoke regardless of the model's decisions",
+      "Add a PostToolUse hook in settings.json that reverts any file changes made during the skill's execution",
+      "Set context: clean in the frontmatter so the skill starts without file system context and cannot identify files to modify"
     ],
     "answer": 1,
-    "explanation": "The allowed-tools frontmatter in a skill definition hard-limits which tools are available during that skill's execution. Restricting a read-only investigation skill to Read, Grep, and Glob prevents it from accidentally modifying files or running commands."
+    "explanation": "allowed-tools in the frontmatter hard-limits which tools are available during the skill's execution — the model cannot invoke tools not on the list regardless of its reasoning. Prompt instructions (A) are probabilistic, which is exactly how this incident happened. A PostToolUse hook (C) reverts changes after the fact but does not prevent them. context: clean (D) controls session context, not tool availability."
   },
   {
     "id": "workflows-subagent-argument-hint",
     "domain": "workflows",
     "difficulty": "advanced",
-    "question": "A skill's SKILL.md frontmatter includes `argument-hint: \"<file_path> [--strict]\"`. What is the purpose of this field?",
+    "question": "Teammates frequently invoke your file-analysis skill incorrectly — some pass a directory path, some pass a glob pattern — when it expects a single file path with an optional --strict flag (e.g., /analyze src/auth/login.ts --strict). You want the correct format to appear in Claude Code's autocomplete and /help output without adding validation logic or changing the skill's behaviour. Where do you put this?",
     "options": [
-      "It validates that the argument matches the specified format before the skill runs",
-      "It shows users how to invoke the skill with arguments, displayed in autocomplete or help text",
-      "It restricts the skill to only accepting file paths as arguments",
-      "It automatically passes the argument to the first tool call the skill makes"
+      "Add an argument validation block at the top of the skill body that checks the format and prints a usage error when it is wrong",
+      "Add argument-hint: \"<file_path> [--strict]\" to the SKILL.md frontmatter — this text is surfaced in autocomplete and help displays so users see the expected format before invoking, with no runtime effect on the skill itself",
+      "Rename the skill file to analyze-file-path.md so the expected argument type is visible in the command name",
+      "Add a USAGE: section with examples in the skill body — Claude Code automatically extracts and displays this in help text"
     ],
     "answer": 1,
-    "explanation": "argument-hint is documentation for users — it describes the expected argument format and is shown in interfaces like autocomplete or /help output. It does not enforce validation or automatically wire arguments to tools."
+    "explanation": "argument-hint is a frontmatter field specifically designed to document expected invocation format for display in autocomplete and /help output. It is purely documentation — it does not validate, restrict, or wire arguments to tools. Validation logic (A) only helps after a mistake has already been made. Renaming (C) is not parsed for help display. USAGE sections (D) in skill bodies are not automatically extracted by Claude Code."
   },
   {
     "id": "workflows-pre-tool-use-hook",
@@ -759,15 +759,15 @@
     "id": "workflows-arguments-placeholder",
     "domain": "workflows",
     "difficulty": "beginner",
-    "question": "You're creating a slash command file at .claude/commands/summarize.md. How do you make it accept user-provided text at invocation time (e.g., /summarize 'my text here')?",
+    "question": "Your /summarize slash command file reads: 'Please summarise the following and extract key points: {input}'. When you run /summarize quarterly earnings report, Claude summarises something about the literal text '{input}' instead of the quarterly earnings report you passed. What is the fix?",
     "options": [
-      "Add {{user_input}} where the text should appear",
-      "Add $ARGUMENTS where the user-provided text should be inserted",
-      "Add {input} as a placeholder that Claude resolves automatically",
-      "Custom slash commands cannot accept arguments; create a separate command for each use case"
+      "Change {input} to {{input}} — double curly braces are required for variable interpolation in command files",
+      "Change {input} to $ARGUMENTS — $ARGUMENTS is the only recognised placeholder in .claude/commands/ files and is replaced with the text following the slash command at invocation time",
+      "Wrap the argument in quotes: /summarize 'quarterly earnings report' — unquoted arguments are not passed to the command",
+      "Arguments to slash commands must be declared in .claude/settings.json under a commands section before they can be referenced"
     ],
     "answer": 1,
-    "explanation": "$ARGUMENTS is the documented placeholder in .claude/commands/ files. When a user runs /summarize 'my text', $ARGUMENTS is replaced with 'my text' before the command is executed."
+    "explanation": "$ARGUMENTS is the only supported placeholder in .claude/commands/ files. When a user runs /summarize quarterly earnings report, the harness substitutes $ARGUMENTS with 'quarterly earnings report' before sending the prompt. {input} and {{input}} are not recognised as placeholders — they are passed as literal text, which is exactly the bug being observed."
   },
   {
     "id": "workflows-permissions-allow",
@@ -829,15 +829,15 @@
     "id": "mcp-tool-choice",
     "domain": "mcp",
     "difficulty": "advanced",
-    "question": "You are building an automated document classifier using the Claude API. The pipeline must take a document, call the `classify_document` tool with a strict JSON schema, and return the classification results. In testing, you notice that in 15% of cases where a document is ambiguous, Claude returns a conversational text response explaining the ambiguity instead of calling the tool. How should you modify the API request to guarantee that the model always returns structured classification output without conversational text?",
+    "question": "You built an automated document classifier where the Claude API must always call a classify_document tool and return structured JSON. In production, 15% of ambiguous documents cause Claude to return a conversational explanation ('This document could belong to either category...') instead of calling the tool, breaking downstream parsing. You have already tried adding 'Only call classify_document, never respond with text' to the system prompt but the failure rate barely changed. What API-level change guarantees structured output?",
     "options": [
-      "Use prompt engineering to add: 'Do not write conversational text under any circumstances, only call the classify_document tool.'",
-      "Set the `tool_choice` parameter to 'any' in the API request configuration",
-      "Set the `tool_choice` parameter to {\"type\": \"tool\", \"name\": \"classify_document\"} in the API request configuration",
-      "Set the temperature parameter to 0.0 to make classification paths more deterministic"
+      "Add more few-shot examples in the system prompt showing Claude calling classify_document even for ambiguous documents",
+      "Set tool_choice to 'any' in the API request — this forces the model to call some tool on every turn",
+      "Set tool_choice to {\"type\": \"tool\", \"name\": \"classify_document\"} — this forces the model to invoke that specific tool on its first turn, eliminating conversational text responses even for ambiguous inputs",
+      "Set temperature to 0.0 to make the model more deterministic and less likely to choose the conversational path"
     ],
     "answer": 2,
-    "explanation": "Forcing a specific tool via `tool_choice: {type: 'tool', name: 'classify_document'}` guarantees that the model will invoke that exact schema on its first turn, preventing conversational text fallbacks even in ambiguous cases. 'any' forces a tool call but doesn't guarantee which tool will be selected if others exist. Prompt instructions are probabilistic and fail on edge cases. Temperature doesn't restrict tool choice parameters."
+    "explanation": "tool_choice: {type: 'tool', name: 'classify_document'} is a hard API-level constraint — the model must invoke that specific tool on its first turn regardless of ambiguity. The prompt instruction approach already failed (established in the scenario), confirming that probabilistic solutions are insufficient. tool_choice: 'any' forces a tool call but does not guarantee which tool is called if others exist in the tool list. Temperature affects sampling randomness but does not restrict which response type the model produces."
   },
   {
     "id": "mcp-too-many-tools",
@@ -857,57 +857,57 @@
     "id": "mcp-project-vs-user-scope",
     "domain": "mcp",
     "difficulty": "intermediate",
-    "question": "Your team needs a Jira MCP server that all developers should share. A developer also has a personal GitHub server only they use. Where should each be configured?",
+    "question": "A developer configures both the team's shared Jira MCP server and their personal GitHub MCP server in .mcp.json in the project root and commits it. The next day, three teammates complain the personal GitHub server is prompting them for an API key they don't have, and another developer's unrelated project is now showing the Jira server they don't need. What was configured incorrectly and how should it be fixed?",
     "options": [
-      "Both in ~/.claude.json so they persist across all projects",
-      "Both in .mcp.json in the project root so they are version-controlled",
-      "The Jira server in .mcp.json (project-scoped), the personal GitHub server in ~/.claude.json (user-scoped)",
-      "MCP servers cannot be scoped; all configurations are global"
+      "Both servers should have been added to ~/.claude.json instead — .mcp.json is only for local development and is not shared via git",
+      "The personal GitHub server should not have been committed to .mcp.json — it belongs in ~/.claude.json (user-scoped, machine-specific, not version-controlled). The Jira server is correctly in .mcp.json since it is shared across the team and project.",
+      "Both servers are correctly placed — teammates need to add their own API keys and unrelated projects should filter by server tags",
+      "The Jira server should be in ~/.claude.json and the GitHub server in .mcp.json — the scopes are reversed"
     ],
-    "answer": 2,
-    "explanation": ".mcp.json in the project root is committed and shared with the team, making it right for shared servers like Jira. ~/.claude.json (user-level config) is personal and machine-specific, making it right for personal tools like a personal GitHub server."
+    "answer": 1,
+    "explanation": ".mcp.json in the project root is version-controlled and shared with every developer who clones the project — the right place for the shared Jira server. ~/.claude.json is personal, machine-specific, and not committed to git — the right place for a personal GitHub server that only one developer uses. Committing the personal server to .mcp.json forces it on all teammates and leaks it across all projects on that machine."
   },
   {
     "id": "mcp-env-expansion",
     "domain": "mcp",
     "difficulty": "intermediate",
-    "question": "Your .mcp.json references an API key like this: `\"apiKey\": \"${MY_API_KEY}\"`. What must be true for this to work?",
+    "question": "You committed .mcp.json to the repository with the Jira server's API key configured as ${JIRA_TOKEN}. Your Jira integration works perfectly. A new teammate clones the repo, launches Claude Code, and immediately gets 'Jira MCP server: authentication error.' They confirm they have a valid Jira API token. What is most likely wrong and what should they do?",
     "options": [
-      "The variable must be hardcoded in .mcp.json as a fallback",
-      "MY_API_KEY must be set in the shell environment before Claude Code starts",
-      "The variable name must match a key in settings.json",
-      "Environment variable expansion is not supported in .mcp.json"
+      "The .mcp.json format does not support ${} syntax — they need to replace ${JIRA_TOKEN} with their actual token value directly in the file",
+      "They need to export JIRA_TOKEN in their shell environment before launching Claude Code — ${JIRA_TOKEN} is expanded from the shell environment at startup, not sourced from any shared config file",
+      "They need to add their JIRA_TOKEN to .claude/settings.json under an env key for Claude Code to pass it to the MCP server",
+      "The variable expansion only works when running Claude Code with the --env flag: claude --env JIRA_TOKEN=<value>"
     ],
     "answer": 1,
-    "explanation": ".mcp.json supports ${VAR} syntax for environment variable expansion. The variable must exist in the shell environment when Claude Code launches. This lets teams store server configs in version control without embedding secrets."
+    "explanation": "${JIRA_TOKEN} in .mcp.json is expanded from the shell environment when Claude Code starts. The variable must exist in the environment before launch — typically set in .bashrc, .zshrc, or exported in the current shell session. The teammate has a valid token but has not exported it as an environment variable. This design allows teams to commit server configuration without embedding secrets in version-controlled files."
   },
   {
     "id": "mcp-http-transport",
     "domain": "mcp",
     "difficulty": "intermediate",
-    "question": "Your organisation wants to deploy an MCP server that multiple teams access simultaneously from different machines. Which transport is most appropriate?",
+    "question": "Your team's internal code-analysis MCP server uses stdio transport and works perfectly for the developer who runs it on their laptop. When three other teammates try to connect from their own machines it fails immediately, and the CI pipeline cannot reach it at all. Your infrastructure team is debating whether to set up a network tunnel to the developer's laptop or migrate the transport layer. Which option resolves the root cause?",
     "options": [
-      "stdio — it's the simplest and works for all use cases",
-      "Streamable HTTP — it supports remote access, multiple concurrent clients, and network deployment",
-      "WebSocket — it's the standard for real-time multi-user applications",
-      "FTP — it's designed for multi-user file transfer scenarios"
+      "Set up a network tunnel — stdio traffic can be proxied over a secure connection to remote clients without changing the transport",
+      "Migrate to Streamable HTTP transport — stdio requires the server to run as a local subprocess on the same machine as the client, making remote access fundamentally impossible without changing transports. HTTP supports centrally deployed servers serving multiple concurrent remote clients.",
+      "Have each developer run their own local copy of the server — stdio MCP servers are designed to be replicated per developer, not shared",
+      "Migrate to WebSocket transport — it is the standard protocol for real-time multi-user network applications"
     ],
     "answer": 1,
-    "explanation": "Streamable HTTP is designed for remotely hosted MCP servers that serve multiple clients over a network. stdio is for local subprocess servers used by a single client. WebSocket and FTP are not standard MCP transports."
+    "explanation": "stdio transport launches the server as a subprocess on the client's machine — it is fundamentally local. There is no standard way to proxy this over a network without effectively reimplementing a transport layer, and tunnelling the developer's laptop is fragile and not production-appropriate. Streamable HTTP is the designed solution: deploy the server centrally once, accessible from any machine over the network. WebSocket is not a standard MCP transport."
   },
   {
     "id": "mcp-resource-vs-tool",
     "domain": "mcp",
     "difficulty": "intermediate",
-    "question": "You're designing an MCP server for a documentation system. Users want Claude to read documentation pages. Should you expose this as a tool or a resource?",
+    "question": "Your MCP server exposes documentation pages via a get_documentation(page_id) tool. Usage logs show Claude calls this tool 40-60 times per session — sometimes requesting the same page multiple times. Session latency has increased significantly and context windows are filling with repetitive tool call overhead. A teammate proposes converting the frequently-accessed reference pages to MCP resources instead of tools. What is the architectural reason this would help?",
     "options": [
-      "A tool, because tools are more powerful than resources",
-      "A resource, because documentation pages are read-only data that the server publishes for consumption",
-      "Both — duplicate the functionality as both a tool and a resource for flexibility",
-      "Neither — documentation should be loaded into CLAUDE.md instead"
+      "Resources have higher rate limits than tools, so converting to resources reduces the chance of throttling under heavy load",
+      "Resources are server-published read-only data that client applications can load and cache outside the model's tool-call loop — converting reference pages to resources removes the per-access round trip, allows pre-loading at session start, and keeps the conversation cleaner",
+      "Resources are compressed before transmission, reducing the token count when documentation content enters Claude's context window",
+      "Converting to resources prevents Claude from reading stale cached pages — resources always serve live data on each access"
     ],
     "answer": 1,
-    "explanation": "Resources are the MCP primitive for read-only data that a server exposes for consumption — documentation pages, reference data, file contents. Tools are for actions and operations that have side effects. Using resources for read-only data is the architecturally correct choice."
+    "explanation": "The key distinction is who controls access and when. Tools are invoked by the model on demand — every read is a round trip tool call that consumes context. Resources are published by the server and consumed by the application, which can pre-load relevant ones at session start, cache stable content, and surface it without model-initiated calls. For stable reference content like documentation pages that don't change based on Claude's actions, resources remove the repeated tool-call overhead that is causing the latency and context bloat."
   },
   {
     "id": "mcp-prompt-primitive",
@@ -941,15 +941,15 @@
     "id": "context-import-syntax",
     "domain": "context",
     "difficulty": "intermediate",
-    "question": "Your team maintains separate files: api-contracts.md, testing-standards.md, and security-policies.md. The project CLAUDE.md is getting long because all three are copied in full. A developer proposes placing three separate CLAUDE.md files in subdirectories instead. What is a better approach that keeps conventions in separate maintainable files without bloating the root CLAUDE.md?",
+    "question": "Your team maintains three separate convention files: api-contracts.md, testing-standards.md, and security-policies.md. To make Claude follow them, a developer copied all three into the root CLAUDE.md in full — now it is over 5,000 tokens and any update to one convention requires editing two files. A teammate proposes splitting into three subdirectory CLAUDE.md files. Another suggests moving them to skills. What approach keeps conventions in their own maintainable files while loading them every session without the token duplication?",
     "options": [
-      "Move the conventions to skills so they load on demand when relevant tasks are detected",
-      "Use @import directives in the root CLAUDE.md to reference the three files by path — they stay separate and maintainable, the root file stays concise, and updates to any convention file are picked up automatically",
-      "Use {{include}} syntax to inline the files at load time",
-      "Copy content into CLAUDE.md but use HTML comments to mark each section for easier future extraction"
+      "Three subdirectory CLAUDE.md files — this splits content across directories but Claude loads all of them, keeping per-file maintenance while distributing the token cost",
+      "Use @import directives in the root CLAUDE.md to reference each file by path — the files remain separate and independently maintainable, updates are picked up automatically, and the root file stays concise",
+      "Move all three to skills so they load on demand — this reduces per-turn token cost and keeps files separate",
+      "Use {{include}} syntax in CLAUDE.md to inline each file's content at load time"
     ],
     "answer": 1,
-    "explanation": "@import in CLAUDE.md resolves relative file paths at load time, pulling in the referenced file's content. Convention files can be updated independently — the root CLAUDE.md @import reference automatically picks up changes. This is the designed way to compose modular CLAUDE.md content without duplication."
+    "explanation": "@import in CLAUDE.md resolves relative file paths at load time, pulling in the referenced file's content. Convention files remain independently maintainable — editing api-contracts.md is picked up automatically without touching CLAUDE.md. This satisfies all the requirements: separate files, no duplication, available every session. Subdirectory CLAUDE.md files (A) only load when Claude is working in that directory. Skills (C) require explicit invocation and don't load every session. {{include}} is not valid CLAUDE.md syntax."
   },
   {
     "id": "context-claudemd-size",
@@ -1039,15 +1039,15 @@
     "id": "context-compact-command",
     "domain": "context",
     "difficulty": "beginner",
-    "question": "Your conversation with Claude has grown very long and response quality is degrading. What Claude Code feature helps manage this?",
+    "question": "An hour into a debugging session, Claude suggests switching to a callback-based approach — directly contradicting the async/await decision you both agreed on 45 minutes ago. You still need Claude's help finishing the current feature and do not want to lose the working context you have built up. You want to prevent further contradictions from early context being dropped, but starting completely over would cost significant time. What is the most appropriate action?",
     "options": [
-      "/reset — deletes the session and starts completely fresh",
-      "/compact — summarises earlier conversation turns to free up context space while preserving the session",
-      "/trim — removes the last 10 messages from the session",
-      "/save — exports the conversation to a file and clears the window"
+      "Use /reset to wipe the session and start fresh, then re-explain the async/await decision and all prior context",
+      "Use /compact to summarise and compress earlier turns, freeing context space while keeping the session alive — then immediately restate the async/await constraint so it is prominent in the remaining context",
+      "Open a new session and paste in the current conversation transcript so Claude has full context without compression loss",
+      "Continue the session and trust that Claude will self-correct as more context accumulates"
     ],
     "answer": 1,
-    "explanation": "/compact triggers context compaction, summarising earlier turns to reduce token count while keeping the session alive. This differs from /reset (which wipes the session) and is preferable when you want to continue the same work without starting over."
+    "explanation": "/compact triggers context compaction — it summarises earlier turns to reduce token count while keeping the session and working state alive. After compacting, restating the async/await constraint ensures it is prominent and less likely to be lost again. /reset (A) wipes the session entirely, losing all working context. Pasting the transcript (C) into a new session hits the same context limits. Continuing without action (D) does not address why the contradiction happened."
   },
   {
     "id": "context-tool-result-size",
@@ -1179,29 +1179,29 @@
     "id": "prompting-batches-custom-id",
     "domain": "prompting",
     "difficulty": "intermediate",
-    "question": "You submit 500 documents for analysis using the Message Batches API. When results arrive, how do you match each result to its source document?",
+    "question": "Your batch pipeline submits 500 contract documents for clause extraction overnight. Results arrive 8 hours later but are in a completely different order than you submitted them, and the result file contains no document names or file paths — only Claude's extracted data. Your downstream system needs to write each result back to the correct source document. How should the pipeline have been designed to make this matching possible?",
     "options": [
-      "Results arrive in the same order as submission, so use positional indexing",
-      "Each result includes the custom_id you assigned at submission time, which you use to correlate results with source documents",
-      "The API returns a mapping file alongside results that links positions to document names",
-      "Results include the first 50 characters of the input prompt for identification"
+      "Submit documents in alphabetical order and assume results arrive in the same order — the Batches API preserves submission sequence",
+      "Include the document filename in the prompt text so Claude echoes it back in the response for post-hoc extraction",
+      "Assign each request a unique custom_id at submission time — each result in the batch response carries the same custom_id, providing reliable correlation regardless of result ordering",
+      "Use the result timestamps to reconstruct the original submission order by sorting chronologically"
     ],
-    "answer": 1,
-    "explanation": "The Message Batches API does not guarantee result ordering. Each request must have a unique custom_id at submission, and each result carries that same custom_id for correlation. This is the designed mechanism for matching asynchronous results to their inputs."
+    "answer": 2,
+    "explanation": "The Message Batches API does not guarantee result ordering — results can arrive in any sequence. The designed solution is custom_id: each request gets a unique identifier at submission (e.g., the document filename or database ID), and each result in the response carries that same custom_id for correlation. Positional indexing (A) breaks because ordering is not preserved. Embedding filenames in prompts (B) requires fragile text parsing. Timestamps (D) do not reflect submission order."
   },
   {
     "id": "prompting-batches-no-multiturn",
     "domain": "prompting",
     "difficulty": "advanced",
-    "question": "Which use case is NOT suitable for the Message Batches API?",
+    "question": "An engineering manager proposes using the Message Batches API for two new workflows to cut API costs by 50%: (1) a nightly job that scores 20,000 customer support tickets for priority and routes them to queues before the morning shift, and (2) a live support chat feature where customers expect responses within 3 seconds and the conversation can span multiple back-and-forth turns. Which proposal is sound?",
     "options": [
-      "Generating product descriptions for a 10,000-item catalogue overnight",
-      "Classifying customer support tickets into categories for a weekly report",
-      "A multi-turn customer support chatbot that needs to respond to users within seconds",
-      "Running nightly sentiment analysis on the day's social media mentions"
+      "Both are sound — the Batches API's 50% cost reduction applies to any volume workload and the response time is configurable",
+      "Only workflow (1) — the Batches API processes requests asynchronously with no latency SLA (up to 24 hours) and does not support multi-turn conversations. Workflow (2) requires synchronous real-time API calls.",
+      "Only workflow (2) — the Batches API is designed for interactive workloads that need guaranteed throughput, not overnight batch jobs",
+      "Both would work but workflow (2) needs to be redesigned to use polling instead of a persistent connection"
     ],
-    "answer": 2,
-    "explanation": "The Message Batches API processes requests asynchronously with no latency guarantee (up to 24 hours) and does not support multi-turn tool calling. It is designed for high-volume, latency-tolerant, single-turn tasks. A real-time chatbot requires synchronous, multi-turn API calls."
+    "answer": 1,
+    "explanation": "The Batches API is designed for high-volume, latency-tolerant, single-turn requests — overnight scoring of 20,000 tickets (workflow 1) is an ideal fit. Workflow (2) fails on two counts: the API provides no latency SLA (could take up to 24 hours, not 3 seconds) and does not support multi-turn conversations where each response depends on the previous one. Live chat requires the synchronous API."
   },
   {
     "id": "prompting-interview-clarification",
