@@ -145,42 +145,25 @@ const poolByDomain = Object.fromEntries(
       const cards = [...els.form.querySelectorAll('.q')];
       let correct = 0;
       const byDomain = {};
-      const missed = [];
+      const results = [];
       cards.forEach((card, i) => {
         const ans = parseInt(card.dataset.answer, 10);
         const dom = card.dataset.domain;
         byDomain[dom] ||= { correct: 0, total: 0 };
         byDomain[dom].total++;
         const chosen = card.querySelector(`input[name="q${i}"]:checked`);
-        const opts = [...card.querySelectorAll('.opt')];
-        card.classList.add('answered');
-        opts.forEach((o, oi) => {
-          o.querySelector('input').disabled = true;
-          if (oi === ans) o.classList.add('correct');
-        });
-        if (chosen) {
-          const ci = parseInt(chosen.value, 10);
-          if (ci === ans) {
-            correct++;
-            byDomain[dom].correct++;
-          } else {
-            opts[ci].classList.add('incorrect');
-            missed.push({ idx: i, q: current[i], chosen: ci });
-          }
-        } else {
-          missed.push({ idx: i, q: current[i], chosen: null });
-        }
-        const q = current[i];
-        card.querySelector('.explain').innerHTML =
-          `<strong>Answer:</strong> ${escapeHtml(q.options[ans])}<br>${escapeHtml(q.explanation)}`;
+        const ci = chosen ? parseInt(chosen.value, 10) : null;
+        const isCorrect = ci === ans;
+        if (isCorrect) { correct++; byDomain[dom].correct++; }
+        results.push({ q: current[i], chosen: ci, isCorrect });
       });
-
+      els.form.style.display = 'none';
       const total = cards.length;
       const pct = Math.round((correct / total) * 100);
-      showResult(correct, total, pct, byDomain, missed);
+      showResult(correct, total, pct, byDomain, results);
     }
 
-    function showResult(correct, total, pct, byDomain, missed) {
+    function showResult(correct, total, pct, byDomain, results) {
       const pass = pct >= 72;
       let rows = '';
       for (const [id, s] of Object.entries(byDomain)) {
@@ -188,39 +171,40 @@ const poolByDomain = Object.fromEntries(
         rows += `<tr><td>${escapeHtml(domainMeta[id].name)}</td><td>${s.correct}/${s.total}</td><td>${dpct}%</td></tr>`;
       }
 
-      let reviewHtml = '';
-      if (missed.length === 0) {
-        reviewHtml = `<p style="color:var(--green);font-weight:600">✓ All correct — nothing to review.</p>`;
-      } else {
-        const cards = missed.map(({ idx, q, chosen }) => {
-          const opts = q.options.map((o, oi) => {
-            let cls = 'opt';
-            if (oi === q.answer) cls += ' correct';
-            else if (oi === chosen) cls += ' incorrect';
-            return `<div class="${cls}" style="cursor:default">${escapeHtml(o)}</div>`;
-          }).join('');
-          const skipped = chosen === null
-            ? `<div class="opt incorrect" style="cursor:default;margin-bottom:0.25rem">✗ No answer selected</div>`
-            : '';
-          return (
-            `<div class="q answered">` +
-            `<div class="qnum">Q${idx + 1} &middot; ${escapeHtml(domainMeta[q.domain].name)}</div>` +
-            `<p><strong>${escapeHtml(q.question)}</strong></p>` +
-            skipped +
-            opts +
-            `<div class="explain"><strong>Answer:</strong> ${escapeHtml(q.options[q.answer])}<br>${escapeHtml(q.explanation)}</div>` +
-            `</div>`
-          );
+      const reviewCards = results.map(({ q, chosen, isCorrect }, i) => {
+        const opts = q.options.map((o, oi) => {
+          let cls = 'opt';
+          if (oi === q.answer) cls += ' correct';
+          else if (oi === chosen) cls += ' incorrect';
+          return `<div class="${cls}" style="cursor:default">${escapeHtml(o)}</div>`;
         }).join('');
-        reviewHtml = `<h2 style="margin-top:2rem;font-size:1.1rem">Missed questions (${missed.length})</h2>${cards}`;
-      }
+        const skipped = chosen === null
+          ? `<div class="opt incorrect" style="cursor:default;margin-bottom:0.25rem">✗ No answer selected</div>`
+          : '';
+        return (
+          `<div class="q answered">` +
+          `<div class="qnum">${isCorrect ? '✓' : '✗'} Question ${i + 1} of ${results.length} &middot; ${escapeHtml(domainMeta[q.domain].name)}</div>` +
+          `<p><strong>${escapeHtml(q.question)}</strong></p>` +
+          skipped +
+          opts +
+          `<div class="explain"><strong>Answer:</strong> ${escapeHtml(q.options[q.answer])}<br>${escapeHtml(q.explanation)}</div>` +
+          `</div>`
+        );
+      }).join('');
+
+      const missedCount = results.filter((r) => !r.isCorrect).length;
+      const summaryNote = missedCount === 0
+        ? `<p style="color:var(--green);font-weight:600">All correct — nothing to review.</p>`
+        : `<p class="muted">${missedCount} incorrect. Review all questions below in the order you answered them.</p>`;
 
       els.result.innerHTML =
         `<div class="score-banner" style="border-color:${pass ? 'var(--green)' : 'var(--red)'}">` +
         `${pass ? '✓ Pass' : '✗ Keep studying'} — ${correct}/${total} (${pct}%)</div>` +
         `<p class="muted">Pass mark is 72%.</p>` +
         `<table class="tablelike"><thead><tr><th>Domain</th><th>Score</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>` +
-        reviewHtml;
+        summaryNote +
+        `<h2 style="margin-top:2rem;font-size:1.1rem">Question review</h2>` +
+        reviewCards;
       els.result.style.display = '';
       els.actions.querySelector('#submit').style.display = 'none';
       els.result.scrollIntoView({ behavior: 'smooth' });
