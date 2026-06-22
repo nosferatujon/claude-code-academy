@@ -7,7 +7,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "deploy": "npm run build && npx wrangler pages deploy dist --project-name=claude-code-academy"
+    "deploy": "npm run build && npx wrangler deploy"
   },
   "dependencies": {
     "astro": "^6.4.8",
