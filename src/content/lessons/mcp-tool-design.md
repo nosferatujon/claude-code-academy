@@ -2,8 +2,8 @@
 title: Tool Design & MCP Integration
 domain: mcp
 order: 1
-minutes: 11
-summary: What the Model Context Protocol is, its primitives (tools, resources, prompts), transports, and how to design good tool boundaries.
+minutes: 17
+summary: What the Model Context Protocol is, its primitives (tools, resources, prompts), transports, MCP error handling, tool_choice, built-in tools, server scoping, and how to design good tool boundaries.
 ---
 
 ## What is MCP?
@@ -55,6 +55,8 @@ Resources are read-only data that can be loaded into the conversation as context
 
 Think of resources as "here is data I want Claude to be aware of" rather than "here is an action Claude can take."
 
+Exposing content catalogs as MCP resources is a useful optimization: instead of having the agent call a tool to discover what documents exist (burning tool calls on exploration), you surface the catalog as a resource that loads into context directly. The agent then knows what's available without needing to search.
+
 ### Prompts — reusable templates
 Servers can also expose **prompt templates** — pre-written prompts that users or applications can invoke. These often surface as slash commands in Claude Code.
 
@@ -90,10 +92,130 @@ claude mcp add my-server --command "node my-server.js"   # stdio
 claude mcp add my-api --url "https://my-api.com/mcp"     # HTTP
 ```
 
-Server scopes:
-- **Local** — only available to you on this machine
-- **Project** — defined in `.claude/mcp.json`, committed to git and shared with the team
-- **User** — available across all your projects
+## MCP server scoping
+
+Where you configure an MCP server determines who can use it and whether it's shared with your team.
+
+### Project scope — `.mcp.json`
+Defined in `.mcp.json` at the project root. This file is **committed to git**, so it's shared with all team members. Everyone who checks out the project gets the same MCP server configuration automatically.
+
+Use project scope for: shared team integrations, project-specific databases, CI-relevant tools.
+
+### User scope — `~/.claude.json`
+Defined in your global Claude config. This is **personal and not shared** — it lives on your machine only. Use it for personal or experimental integrations you don't want to impose on the team.
+
+### Environment variable expansion
+`.mcp.json` supports `${ENV_VAR}` syntax so you can reference credentials without committing secrets:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "node",
+      "args": ["github-mcp-server.js"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+Each developer sets their own `GITHUB_TOKEN` environment variable. The token is never in the committed file.
+
+### Discovery
+All configured MCP servers — regardless of scope — are discovered at connection time and available simultaneously. You don't need to manually activate them per session.
+
+### Community vs. custom servers
+For standard integrations (Jira, GitHub, Slack, databases), start with community MCP servers — they're already built and tested. Reserve custom MCP server development for team-specific workflows that community servers don't cover.
+
+## MCP error handling
+
+When tools fail, how you communicate that failure back to the agent determines whether the agent can recover intelligently.
+
+### The `isError` flag
+MCP tool responses include an `isError` flag. Setting `isError: true` explicitly signals a failure to the agent — distinct from returning empty results. The agent uses this signal to decide whether to retry, escalate, or try a different approach.
+
+**Important distinction:** a tool that returns `isError: false` with an empty array (`[]`) is saying "the query succeeded, there were just no matches." A tool that returns `isError: true` is saying "something went wrong." These are completely different situations and the agent should handle them differently.
+
+### Error categories
+Structure your error responses with enough information for the agent to make good decisions:
+
+| Category | Meaning | Agent action |
+|---|---|---|
+| Transient | Timeout, service temporarily unavailable | Retry after a short wait |
+| Validation | Bad input (wrong type, missing field) | Fix the call, don't retry as-is |
+| Business | Policy violation (e.g. item out of stock) | Report to user, don't retry |
+| Permission | Access denied | Escalate, don't retry |
+
+Return this as structured metadata — at minimum an `errorCategory`, an `isRetryable` boolean, and a human-readable description:
+
+```json
+{
+  "isError": true,
+  "errorCategory": "transient",
+  "isRetryable": true,
+  "description": "Database connection timed out. The service is typically available within 30 seconds."
+}
+```
+
+### Error handling in multi-agent systems
+Subagents should handle transient failures locally — retry with backoff, then either succeed or give up. Only escalate errors to the coordinator when the subagent cannot resolve them. When escalating, include partial results if any work was completed before the failure. This prevents the coordinator from waiting indefinitely and lets it make an informed decision about how to proceed.
+
+## Tool count and tool_choice
+
+### Keep tool counts low
+Giving an agent too many tools degrades performance. When an agent has 18 tools to choose from instead of 4–5, it makes worse selection decisions — the cognitive overhead of choosing among many options introduces errors.
+
+The right approach in a multi-agent system: each subagent gets only the tools relevant to its specific role. A file-reading subagent doesn't need database tools. A database subagent doesn't need file-editing tools. Tight tool sets produce more reliable behavior.
+
+### `tool_choice` — controlling whether and which tool gets called
+`tool_choice` is an API parameter that controls the model's tool-calling behavior:
+
+| Value | Behavior |
+|---|---|
+| `"auto"` | Model decides whether to call a tool or return text. May return conversational text instead of a tool call. |
+| `"any"` | Model **must** call a tool, but chooses which one from the available set. |
+| `{"type": "tool", "name": "extract_data"}` | Model **must** call this specific tool. |
+
+**Use `tool_choice: "any"`** when you need to guarantee a tool call happens instead of the model returning a prose response. This is common in structured output workflows where you need machine-parseable results on every turn.
+
+**Use `tool_choice: {"type": "tool", "name": "..."}`** when you need to force a specific extraction or action step in a pipeline.
+
+## Built-in tools (Grep, Glob, Read, Write, Edit, Bash)
+
+Claude Code has a set of built-in tools for working with code. Understanding what each one is for helps you write better instructions and understand agent behavior.
+
+### Grep — search file contents
+Grep searches file *contents* for patterns. Use it to find where a function is defined, where a specific error message appears, which files import a particular module. Think of it as full-text search across your codebase.
+
+**Example uses:** finding all files that call `validateToken`, finding where a specific error string appears, finding all import statements for a module.
+
+### Glob — find files by name pattern
+Glob matches file *paths* by pattern. Use it when you know something about the file's name or location but not its contents.
+
+**Example:** `**/*.test.tsx` finds all test files anywhere in the project. `src/routes/**/*.ts` finds all TypeScript files under the routes directory.
+
+### Read and Write — full file operations
+Read loads an entire file into context. Write creates or replaces a file entirely. Use Read when you need to understand the full content of a file; use Write when creating a new file from scratch.
+
+### Edit — targeted in-place modifications
+Edit makes targeted changes to specific parts of a file using unique text matching. It's more efficient than Read + Write for small changes because it only sends the diff.
+
+**When Edit fails:** Edit requires the target text to be unique in the file. If the same string appears multiple times, Edit can't tell which instance to change and will fail. In that case, fall back to Read + Write — read the full file, make the change in memory, write the whole file back.
+
+### Bash — arbitrary shell commands
+Bash executes shell commands directly. Use it for running tests, build commands, git operations, or anything else that needs the shell.
+
+### Building codebase understanding incrementally
+A common mistake is trying to read every file upfront before doing any work. Instead, build understanding incrementally:
+
+1. Use Grep to find entry points — the `main` function, the router configuration, the top-level module
+2. Read those specific files
+3. Follow imports and references to the next relevant files
+4. Read only what you actually need
+
+This keeps the context window lean and focused on what's actually relevant to the task.
 
 ## Designing good tools
 
@@ -154,5 +276,12 @@ Expose only what's necessary. If a tool only needs to *read* data, don't give it
 - MCP = open protocol; host runs a client, client connects to servers.
 - **Primitives**: tools (model-called actions), resources (read-only data loaded by app/user), prompts (templates).
 - **Transports**: stdio for local subprocesses, HTTP for remote/shared servers.
+- **Project scope** (`.mcp.json`) is committed to git and shared; **user scope** (`~/.claude.json`) is personal. Use `${ENV_VAR}` for credentials in `.mcp.json`.
+- The `isError` flag distinguishes failures from valid empty results — the agent needs to know the difference.
+- Structured error responses should include `errorCategory`, `isRetryable`, and a description.
+- **Tool count matters**: 4–5 focused tools per subagent outperforms 18 general tools.
+- `tool_choice: "any"` guarantees a tool call; `tool_choice: "auto"` may return text instead.
+- **Built-in tools**: Grep for content search, Glob for file path patterns, Edit for targeted changes (fall back to Read+Write when Edit fails due to non-unique match), Bash for shell commands.
+- Expose content catalogs as **resources** to reduce exploratory tool calls.
 - Good tools are: **single-purpose**, **well-described** (for the model), **typed**, and **least-privilege**.
 - Tool descriptions are the model's only signal for when to use a tool — write them carefully.

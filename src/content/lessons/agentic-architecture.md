@@ -2,8 +2,8 @@
 title: Agentic Architecture & Orchestration
 domain: agentic
 order: 1
-minutes: 12
-summary: How agents are structured — single-agent loops, the Claude Agent SDK, multi-agent orchestration, hub-and-spoke patterns, and lifecycle hooks.
+minutes: 18
+summary: How agents are structured — single-agent loops, stop_reason mechanics, the Claude Agent SDK, the Task tool, multi-agent orchestration, task decomposition strategies, session management, and lifecycle hooks.
 ---
 
 ## What is an AI agent?
@@ -34,6 +34,35 @@ Every agent — including Claude Code — runs the same core cycle:
 
 This loop continues automatically. You don't direct each step.
 
+## stop_reason mechanics
+
+This is one of the most heavily tested topics on the exam. The agentic loop in the Claude Agent SDK doesn't guess when to stop — it inspects the `stop_reason` field on every API response and uses that to decide what to do next.
+
+There are two primary stop reasons to know:
+
+- **`"tool_use"`** — Claude wants to call a tool. The loop should execute the requested tool, append the tool result to the conversation history, and call the API again. The loop is not done.
+- **`"end_turn"`** — Claude is finished. Present the final response to the user and stop the loop.
+
+Visualizing this as code logic:
+
+```
+while true:
+  response = call_claude_api(messages)
+  if response.stop_reason == "tool_use":
+    result = execute_tool(response.tool_call)
+    messages.append(tool_result(result))
+    continue                     // loop again
+  else if response.stop_reason == "end_turn":
+    present(response.final_text)
+    break                        // done
+```
+
+**Anti-patterns the exam tests against:**
+
+- **Parsing natural language signals** — don't scan the assistant's text for phrases like "I'm done" or "task complete" to decide when to stop. The model may say that mid-task. Use `stop_reason`.
+- **Arbitrary iteration caps as the primary stop condition** — a hard limit like "stop after 10 turns" is a safety net, not the main termination logic. The primary stop is always `stop_reason == "end_turn"`.
+- **Checking for assistant text content as a completion indicator** — the presence or absence of text in the response is not a reliable signal. Always use `stop_reason`.
+
 ## Single-agent vs. multi-agent
 
 ### Single agent
@@ -49,7 +78,7 @@ A **coordinator** agent splits a large task into sub-tasks and delegates each on
 - **When to use it:** Work can be done in parallel (e.g. analyze 10 files simultaneously), or you want to prevent one sub-task's details from polluting another's context.
 - **Example:** A research task where one agent searches documentation, another analyzes code, and a third writes a summary — all running at the same time.
 
-In Claude Code, sub-agents are spawned using the **Agent tool**. Each runs in isolation and returns only its final result to the parent, keeping the parent's context clean.
+In the Claude Agent SDK, sub-agents are spawned using the **Task tool**. Each runs in isolation and returns only its final result to the parent, keeping the parent's context clean.
 
 ## Hub-and-spoke (orchestrator–worker)
 
@@ -72,6 +101,64 @@ Orchestrator — Worker B
 - If a worker fails, the orchestrator handles it — workers don't need to know about each other.
 
 **Real example:** An orchestrator is asked to audit a codebase for security issues. It spawns one worker per directory, each scanning independently. Workers return findings; the orchestrator merges and ranks them.
+
+## The Task tool and subagent spawning
+
+The `Task` tool is the specific mechanism in the Claude Agent SDK for spawning subagents from a coordinator.
+
+A few things the exam tests closely:
+
+**The coordinator needs permission to use it.** The coordinator's `allowedTools` list MUST include `"Task"`. If Task is not in that list, the coordinator cannot spawn any subagents — you'll get a tool-not-found error.
+
+**Subagents do NOT inherit parent context.** When you spawn a subagent, it starts with a completely blank conversation. It does not automatically see what the coordinator has done, what files it has read, or what decisions it has made. All necessary context must be passed explicitly in the subagent's prompt. If the coordinator has discovered that a bug lives in `src/auth/token.ts`, it must write that fact into the subagent's prompt — the subagent will not know otherwise.
+
+**`AgentDefinition` configures each subagent type.** You define subagent types ahead of time using `AgentDefinition`, which sets the description, system prompt, and tool restrictions for each role. The coordinator then spawns instances of these defined types.
+
+**Spawning in parallel requires a single coordinator response.** To run multiple subagents at the same time, the coordinator must emit multiple Task tool calls within a SINGLE response turn. If the coordinator calls Task once, waits for the result, then calls Task again, those subagents run sequentially. Parallelism requires that all the Task calls go out together in one turn.
+
+```
+Single response with 3 Task calls → 3 subagents run in parallel ✓
+Turn 1: Task call A → wait → Turn 2: Task call B → sequential ✗
+```
+
+## Task decomposition strategies
+
+How you break a big task into smaller pieces matters as much as the multi-agent machinery itself.
+
+### Prompt chaining
+Fixed sequential steps where each step feeds its output into the next.
+
+**When to use it:** The workflow is predictable and you know all the steps in advance. A good example is a multi-aspect code review: Step 1 checks logic correctness, Step 2 checks security, Step 3 checks performance, Step 4 synthesizes the findings. Each step has a fixed role and a defined input.
+
+**Advantage:** Easy to reason about, easy to debug a specific step.
+
+### Dynamic decomposition
+The coordinator generates subtasks based on what it discovers during the task — the plan is not fixed in advance.
+
+**When to use it:** Open-ended investigations where the scope is unknown upfront. A coordinator asked to "audit this codebase" might read the file tree, discover there are 3 services, then dynamically decide to spawn one worker per service. It couldn't have planned those workers before it looked.
+
+**Advantage:** Adapts to what's actually found rather than assuming structure.
+
+### Code review decomposition (a common exam scenario)
+For code review specifically: split into **per-file local analysis passes** plus a **separate cross-file integration pass**.
+
+Why? If you send all files to one agent, its attention gets diluted — it may miss issues in later files, or make contradictory findings across files (flagging a pattern as a bug in one file while praising the same pattern in another). By giving each file its own analysis pass and then doing a dedicated integration pass, you get higher-quality findings and consistent cross-file reasoning.
+
+## Session management
+
+Long-running or multi-session work requires deliberate session design.
+
+### Resuming named sessions
+Use `--resume <session-name>` to continue a prior session by name. The agent picks up with the prior context intact.
+
+**When to resume:** When the prior context is still valid — the files haven't changed significantly, the task direction is the same, and you want to pick up where you left off rather than re-establish context.
+
+**When to start fresh instead:** When prior tool results are stale (e.g., the codebase has been significantly refactored since the last session). Starting fresh with an injected structured summary — a written description of what was previously learned — is more reliable than resuming and hoping the agent ignores outdated tool results.
+
+**Key tip when resuming:** Explicitly tell the agent which files changed since the last session. The agent cannot detect this on its own, and stale file knowledge is the most common source of errors after resume.
+
+### Forking sessions
+`fork_session` creates an independent branch from a shared analysis baseline. This is useful when you want to compare two implementation approaches — both start from the same "we've analyzed the requirements" baseline, but then diverge to explore Option A vs. Option B independently, without one exploration polluting the other.
 
 ## Lifecycle hooks
 
@@ -97,7 +184,14 @@ Hooks let you run **your own code** at specific moments in the agent's lifecycle
 ## What to remember for the exam
 
 - The agentic loop is: **gather context → decide → act → observe → repeat**.
+- The loop terminates on **`stop_reason`**: `"tool_use"` means keep going; `"end_turn"` means stop. Do not use text parsing, iteration caps, or content checks as the primary termination signal.
 - Choose **single-agent** by default; add multi-agent only when you need parallelism or context isolation.
 - **Hub-and-spoke** means an orchestrator coordinates workers; workers don't talk to each other.
+- The **Task tool** spawns subagents. The coordinator's `allowedTools` must include `"Task"`. Subagents do not inherit parent context — pass everything explicitly.
+- To run subagents **in parallel**, emit all Task calls in a single coordinator response turn.
+- **`AgentDefinition`** configures subagent types: system prompt, description, allowed tools.
+- **Prompt chaining** = fixed sequential steps; **dynamic decomposition** = coordinator decides structure at runtime.
+- For code reviews: per-file local passes + separate cross-file integration pass prevents attention dilution and contradictory findings.
 - **Hooks** are enforced by the harness (not the model), so they cannot be skipped — use them for non-negotiable policy.
+- `--resume` to continue a prior session; `fork_session` to branch from a shared baseline; start fresh (with a structured summary) when tool results are stale.
 - This is the largest exam domain at **27%**.

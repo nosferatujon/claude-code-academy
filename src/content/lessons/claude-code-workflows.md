@@ -2,8 +2,8 @@
 title: Claude Code Configuration & Workflows
 domain: workflows
 order: 1
-minutes: 12
-summary: CLAUDE.md, settings and permissions, slash commands, Agent Skills, plan mode, hooks, and using Claude Code in CI/CD.
+minutes: 18
+summary: CLAUDE.md hierarchy, settings and permissions, slash commands, Agent Skills with frontmatter options, path-specific rules, plan mode, hooks, iterative refinement techniques, and using Claude Code in CI/CD.
 ---
 
 ## What is Claude Code?
@@ -26,7 +26,7 @@ Every time Claude Code starts in a project, it automatically reads a file called
 - Things Claude can figure out by reading the code
 - Generic best practices that apply to every project
 
-`CLAUDE.md` can live at the project root (shared, committed to git) or in subdirectories (Claude loads it when working in that area). Keep it concise — it loads into the context window on every turn, so a bloated CLAUDE.md wastes your token budget.
+Keep it concise — it loads into the context window on every turn, so a bloated CLAUDE.md wastes your token budget.
 
 **Example CLAUDE.md:**
 ```markdown
@@ -38,6 +38,52 @@ Build: `npm run build` → output in `./dist`
 Never modify files in `src/generated/` — they are auto-created by the build.
 Database column names use snake_case; TypeScript fields use camelCase.
 ```
+
+## CLAUDE.md hierarchy — three levels
+
+CLAUDE.md isn't just one file. There are three levels, each with different scope:
+
+**User-level:** `~/.claude/CLAUDE.md` — your personal instructions that apply to every project. This file is **not shared with teammates** — it lives only on your machine and is never version-controlled. Use it for personal preferences like "always use TypeScript strict mode" or "I prefer functional components."
+
+**Project-level:** `CLAUDE.md` at the project root (or `.claude/CLAUDE.md`) — shared with the team via git. This is the main project memory everyone benefits from.
+
+**Directory-level:** `CLAUDE.md` files inside subdirectories — Claude loads them automatically when working in that area. Useful for subsystem-specific context, like a `src/auth/CLAUDE.md` that explains authentication conventions.
+
+### `@import` syntax
+To keep CLAUDE.md files modular, use `@import` to reference external files:
+
+```markdown
+@import ./standards/typescript.md
+@import ./standards/testing.md
+```
+
+This lets you split a large CLAUDE.md into topic-specific files without bloating the main file.
+
+### `.claude/rules/` directory
+An alternative to a monolithic CLAUDE.md is the `.claude/rules/` directory — topic-specific files like `testing.md`, `api-conventions.md`, `database.md`. Each file is focused on one area, making it easier to maintain and update individual sections.
+
+### Diagnosing inconsistent behavior
+Use the `/memory` command to see exactly which memory files are currently loaded. If Claude is ignoring a rule you wrote, `/memory` will show you whether the file is actually being picked up.
+
+## Path-specific rules
+
+Sometimes you want rules that only apply to certain types of files — test files, Terraform configs, database migrations. Rather than loading those rules for every edit, use path-specific rules.
+
+Files in `.claude/rules/` can include YAML frontmatter with a `paths:` field containing glob patterns:
+
+```markdown
+---
+paths:
+  - "terraform/**/*"
+---
+
+Always run `terraform fmt` before suggesting changes.
+Never use `count` for resources that may need individual addressing — use `for_each`.
+```
+
+This rule loads only when Claude is editing files matching `terraform/**/*`. When you're editing a TypeScript file, this rule is invisible to Claude.
+
+**Why this beats subdirectory CLAUDE.md:** Subdirectory files apply to everything in that directory. Path-specific rules can cross directory boundaries — for example, `paths: ["**/*.test.tsx"]` applies to all test files regardless of where they live in the project.
 
 ## Settings and permissions
 
@@ -75,6 +121,10 @@ List each finding with the file name, line number, and a one-sentence descriptio
 
 Now you can type `/review` anytime instead of rewriting that prompt. Slash commands can also accept arguments.
 
+**Two scopes for slash commands:**
+- **Project-scoped:** `.claude/commands/` — committed to git, shared with the team. Everyone gets the same commands.
+- **User-scoped:** `~/.claude/commands/` — personal, not shared. Your own shortcuts that don't belong to a specific project.
+
 **Good uses for slash commands:**
 - Code review checklists
 - Release notes generation
@@ -93,6 +143,19 @@ This means you can have many skills without bloating the context window. Claude 
 
 **Example skill use:** A "security-review" skill that knows how to check for OWASP vulnerabilities. It only loads when you ask Claude to review for security — not during every regular edit.
 
+**Two scopes for skills:**
+- **Project skills:** `.claude/skills/` — shared with the team via git.
+- **Personal skills:** `~/.claude/skills/` — your own skills, not shared.
+
+### Skill frontmatter options
+Skills support YAML frontmatter options that control how they run:
+
+**`context: fork`** — runs the skill in an isolated sub-agent, preventing the skill's verbose output from polluting your main conversation. Use this for long-running analysis skills where you only want the final result.
+
+**`allowed-tools`** — restricts which tools the skill can use during execution. A documentation skill might only need Read and Write, not Bash. This is both a safety feature and a focus tool.
+
+**`argument-hint`** — a prompt that appears when you invoke the skill without arguments. It tells you what parameters the skill needs. For example: `argument-hint: "Which component do you want to scaffold? (e.g. Button, Modal, Form)"`.
+
 ## Plan mode — review before acting
 
 By default, Claude Code acts immediately: it reads files, makes edits, runs commands. **Plan mode** changes this: Claude researches the task and writes a plan, but does **not** make any edits until you approve.
@@ -103,6 +166,27 @@ By default, Claude Code acts immediately: it reads files, makes edits, runs comm
 - Anytime you want to understand Claude's approach before it runs
 
 You enable it with `/plan` or by configuring it in settings for certain types of tasks.
+
+## Iterative refinement techniques
+
+Getting the right output from Claude often takes iteration. These techniques make iteration more productive.
+
+### Concrete examples beat prose
+When instructions are being interpreted inconsistently, adding examples usually fixes it faster than rewording the prose. Instead of elaborating on what "a good commit message" means, show 3 examples of good commit messages and 2 examples of bad ones.
+
+### Test-driven iteration
+Write tests that capture the desired behavior first. Then, when iterating, share failing tests with Claude. "These 3 tests are failing — fix the implementation until they all pass" is a much cleaner feedback loop than "this doesn't feel right."
+
+### The interview pattern
+For complex tasks with non-obvious requirements, ask Claude to interview you before implementing. Instead of jumping straight to code, Claude asks: "What's the expected behavior when the cache expires? What happens if the upstream service is unavailable?"
+
+This surfaces requirements you didn't know you needed to specify — cache invalidation strategies, failure modes, edge cases. It's especially effective for system design tasks.
+
+### Batching vs. sequential fixes
+When Claude finds multiple issues, decide whether to fix them together or one at a time:
+
+- **Batch** when the fixes interact with each other — changing a function signature that several callers need to update, for example.
+- **Sequential** for independent issues — it's easier to review each fix in isolation and confirm it's correct before moving to the next one.
 
 ## Hooks — automation that can't be skipped
 
@@ -132,13 +216,19 @@ Hooks are defined in `.claude/settings.json`:
 
 ## CI/CD — Claude Code in pipelines
 
-Claude Code can run **headlessly** (without a human in the loop) using print mode:
+Claude Code can run **headlessly** (without a human in the loop) using print mode. The `-p` (or `--print`) flag is what enables this — it tells Claude Code not to wait for interactive input, which would hang a pipeline:
 
 ```bash
 claude -p "Review this diff for security issues and output findings as JSON"
 ```
 
-This makes it scriptable in CI/CD pipelines. Common uses:
+For machine-readable output from CI pipelines, combine `--output-format json` with a JSON schema to get structured findings your pipeline can parse and act on.
+
+**Session context isolation for review:** Be aware that the same Claude session that generated code is less effective at reviewing it. The model retains its reasoning context from generation, which makes it less likely to question its own decisions. For genuine code review in CI, use an independent Claude instance with no prior context — it catches more subtle issues.
+
+When running repeated review passes (e.g., nightly or weekly), include the findings from prior runs in the context and instruct Claude to report only new or previously unaddressed issues. This prevents the same findings from appearing in every report.
+
+**Common CI/CD uses:**
 - Automatically triage new GitHub issues
 - Review pull request diffs before merge
 - Generate release notes from commit history
@@ -148,9 +238,14 @@ Combine headless mode with permission settings to tightly control what Claude ca
 
 ## What to remember for the exam
 
-- `CLAUDE.md` is always loaded — keep it concise and project-specific.
+- `CLAUDE.md` has **three levels**: user (`~/.claude/CLAUDE.md`, personal/not shared), project (root, committed to git), directory (subdirectory, loads contextually).
+- Use `@import` to keep CLAUDE.md modular; use `.claude/rules/` for topic-specific files.
+- **Path-specific rules** use YAML frontmatter `paths:` in `.claude/rules/` files — loads only for matching files, works across directory boundaries.
+- Use `/memory` to verify which memory files are loaded and diagnose inconsistent behavior.
 - **Skills** load on demand; `CLAUDE.md` loads always — skills scale without context overhead.
-- **Slash commands** = reusable prompt files in `.claude/commands/`.
+- Skill frontmatter: `context: fork` isolates output, `allowed-tools` restricts tools, `argument-hint` prompts for parameters.
+- **Slash commands**: project-scoped in `.claude/commands/` (shared); user-scoped in `~/.claude/commands/` (personal).
 - **Hooks** are enforced by the harness — the model cannot skip them. Use for non-negotiable automation.
 - **Plan mode** = Claude researches and proposes, no edits until you approve.
-- **Print mode** (`-p`) enables headless use in CI/CD pipelines.
+- **Print mode** (`-p`) enables headless use in CI/CD pipelines; use `--output-format json` for structured output.
+- For CI review: use an independent session (not the same one that generated the code).
