@@ -25,8 +25,6 @@ A **prompt** is any message you send to an AI model. **Prompt engineering** is t
 
 Bad prompting is the most common reason AI outputs feel unhelpful or inconsistent — not because the model is incapable, but because it wasn't given enough information to succeed. Claude is powerful but literal: it does what you actually say, not what you meant to say.
 
-This domain is **20%** of the exam and is the most immediately practiceable — every message you type in Claude Code is a prompt.
-
 ## Context engineering: what you put in matters more than how you phrase it
 
 The biggest lever in modern prompting isn't clever wording — it's **what information you include**.

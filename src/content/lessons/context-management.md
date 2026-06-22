@@ -47,8 +47,6 @@ flowchart TD
     style LIM fill:#2a2818,stroke:#d9a441,color:#e6e8ee
 ```
 
-This domain is **15%** of the exam and focuses on keeping agents accurate and dependable as tasks grow long.
-
 ## Two ways context goes wrong
 
 ### 1. Overflow — too much content

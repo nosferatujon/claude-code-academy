@@ -23,8 +23,6 @@ By the end of this lesson, you will be able to:
 
 **Claude Code** is a command-line tool (and IDE extension) that lets you work with Claude directly inside your codebase. Instead of copying and pasting code into a chat window, Claude Code can read your files, make edits, run commands, and work autonomously on tasks — all from your terminal or editor.
 
-This domain is **20%** of the exam and covers how to configure and customize Claude Code for your project and workflow.
-
 ## CLAUDE.md — project memory
 
 Every time Claude Code starts in a project, it automatically reads a file called `CLAUDE.md` if one exists. This is your project's **persistent memory** — facts that Claude should always know about your codebase.

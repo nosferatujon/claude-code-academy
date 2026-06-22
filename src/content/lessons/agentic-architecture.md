@@ -269,4 +269,3 @@ Hooks let you run **your own code** at specific moments in the agent's lifecycle
 - For code reviews: per-file local passes + separate cross-file integration pass prevents attention dilution and contradictory findings.
 - **Hooks** are enforced by the harness (not the model), so they cannot be skipped — use them for non-negotiable policy.
 - `--resume` to continue a prior session; `fork_session` to branch from a shared baseline; start fresh (with a structured summary) when tool results are stale.
-- This is the largest exam domain at **27%**.

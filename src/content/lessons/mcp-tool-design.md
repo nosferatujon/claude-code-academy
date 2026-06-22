@@ -27,8 +27,6 @@ Without MCP, if you wanted Claude to query your database or search your internal
 
 The analogy: MCP is like **USB-C for AI tools**. Different devices, one standard connector.
 
-This domain is **18%** of the exam.
-
 ## How it works: host, client, and server
 
 MCP has three roles:
