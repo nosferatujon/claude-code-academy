@@ -44,9 +44,9 @@ The schema enforces structure at the API level. Claude doesn't need to format JS
 ```mermaid
 flowchart TD
     Q{"Do you need a\ntool call every time?"}
-    Q -->|"No — text response is fine"| Auto["`tool_choice: 'auto'\nMay return prose instead of a tool call`"]
-    Q -->|"Yes — must call some tool"| Any["`tool_choice: 'any'\nGuarantees a tool call, model picks which`"]
-    Q -->|"Yes — must call one specific tool"| Specific["`tool_choice: {type, name}\nGuarantees this exact schema every turn`"]
+    Q -->|"No guarantee needed"| Auto["tool_choice: 'auto'\nMay return prose\nnot a tool call"]
+    Q -->|"Must call some tool"| Any["tool_choice: 'any'\nGuarantees a call\nmodel picks which"]
+    Q -->|"Must call one specific"| Specific["tool_choice: {type, name}\nForces this exact\nschema every turn"]
     style Auto fill:#2a2818,stroke:#d9a441,color:#e6e8ee
     style Any fill:#252a38,stroke:#3a4058,color:#e6e8ee
     style Specific fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
