@@ -41,6 +41,17 @@ The schema enforces structure at the API level. Claude doesn't need to format JS
 - `"any"` — model must call a tool, chooses which. Guarantees a tool call.
 - `{"type": "tool", "name": "extract_data"}` — model must call this specific tool. Guarantees the specific schema you defined.
 
+```mermaid
+flowchart TD
+    Q{"Do you need a\ntool call every time?"}
+    Q -->|"No — text response is fine"| Auto["`tool_choice: 'auto'\nMay return prose instead of a tool call`"]
+    Q -->|"Yes — must call some tool"| Any["`tool_choice: 'any'\nGuarantees a tool call, model picks which`"]
+    Q -->|"Yes — must call one specific tool"| Specific["`tool_choice: {type, name}\nGuarantees this exact schema every turn`"]
+    style Auto fill:#2a2818,stroke:#d9a441,color:#e6e8ee
+    style Any fill:#252a38,stroke:#3a4058,color:#e6e8ee
+    style Specific fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+```
+
 **What schemas prevent and what they don't:**
 
 Strict JSON schemas eliminate **syntax errors** — malformed JSON, missing brackets, extra prose. They do NOT prevent **semantic errors** — values in the wrong fields, totals that don't sum correctly, plausible-sounding but wrong data. Schema enforcement is structural, not logical. Validate the values, not just the shape.

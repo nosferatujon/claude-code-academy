@@ -128,6 +128,20 @@ Claude Code → (HTTP) → remote MCP server (could be anywhere)
 - Best for: shared team tools, hosted services, multi-user servers
 - Allows centralized deployment and access control
 
+```mermaid
+flowchart LR
+    subgraph Local["stdio — local subprocess"]
+        CC1["Claude Code"] -->|"stdin / stdout"| LS["MCP Server\nchild process"]
+        LS <-->|"direct"| LR["Local files\nor system"]
+    end
+    subgraph Remote["HTTP — remote server"]
+        CC2["Claude Code"] -->|"HTTPS"| RS["MCP Server\nnetwork endpoint"]
+        RS <-->|"shared"| RDB["Team DB\nor service"]
+    end
+    style Local fill:#16271c,stroke:#5bbf7a
+    style Remote fill:#252a38,stroke:#3a4058
+```
+
 **In Claude Code**, you add MCP servers with:
 ```bash
 claude mcp add my-server --command "node my-server.js"   # stdio

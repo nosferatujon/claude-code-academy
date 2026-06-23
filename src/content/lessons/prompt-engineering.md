@@ -47,6 +47,22 @@ The second brief gives Claude the file, the problem, the constraint, and the exp
 - Unrelated files or history that don't affect this task
 - Background information the model doesn't need
 
+```mermaid
+flowchart LR
+    subgraph IN["✓ Include — focused context"]
+        A["Relevant files\nor code snippets"]
+        B["The goal\nwhat done looks like"]
+        C["Constraints\nwhat not to change"]
+        D["Examples\nif output shape is non-obvious"]
+    end
+    subgraph OUT["✗ Leave out — noise"]
+        E["Unrelated files\nor history"]
+        F["Background the model\ndoesn't need"]
+    end
+    style IN fill:#0f1d14,stroke:#5bbf7a
+    style OUT fill:#1d0f0f,stroke:#e06c6c
+```
+
 ## Be explicit and specific
 
 Claude follows instructions literally. Vague prompts produce vague results.
@@ -146,6 +162,19 @@ When you need consistent results, structure your prompt in this order:
 5. **Output format** — exact shape ("Return a JSON array of objects with `line` and `issue` fields.")
 
 You don't need all five sections for every prompt — a simple task just needs a clear instruction. But for complex or repeated tasks, this structure prevents ambiguity.
+
+```mermaid
+flowchart TD
+    R["1 · Role / task\nWhat you want done"] --> C["2 · Context\nRelevant files, data, background"]
+    C --> I["3 · Instructions\nConstraints, steps, tone"]
+    I --> E["4 · Examples\nFew-shot — if output shape is non-obvious"]
+    E --> O["5 · Output format\nExact shape, JSON schema, field names"]
+    style R fill:#252a38,stroke:#d97757,color:#e6e8ee
+    style C fill:#252a38,stroke:#3a4058,color:#e6e8ee
+    style I fill:#252a38,stroke:#3a4058,color:#e6e8ee
+    style E fill:#252a38,stroke:#3a4058,color:#e6e8ee
+    style O fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+```
 
 ## What to remember for the exam
 

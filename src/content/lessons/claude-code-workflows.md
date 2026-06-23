@@ -167,6 +167,24 @@ The key difference from CLAUDE.md:
 
 This means you can have many skills without bloating the context window. Claude reads skill descriptions and pulls in the full skill body only when it matches what you're asking for.
 
+```mermaid
+flowchart LR
+    T["Current task"]
+    subgraph Always["Every turn — always loaded"]
+        CM["CLAUDE.md\nProject rules · commands · conventions"]
+    end
+    subgraph OnDemand["On demand — loaded when relevant"]
+        S1["security-review skill"]
+        S2["scaffold-component skill"]
+        S3["deploy-checklist skill"]
+    end
+    T -->|"always"| CM
+    T -->|"Claude reads descriptions\nloads only if relevant"| OnDemand
+    style Always fill:#0f1d14,stroke:#5bbf7a
+    style OnDemand fill:#1b1f2a,stroke:#3a4058
+    style CM fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+```
+
 **Example skill use:** A "security-review" skill that knows how to check for OWASP vulnerabilities. It only loads when you ask Claude to review for security — not during every regular edit.
 
 **Two scopes for skills:**

@@ -191,6 +191,21 @@ An agent should recognize when it cannot proceed on its own and **escalate** rat
 - Retries have been exhausted
 - The agent has been in the same loop for too many iterations
 
+```mermaid
+flowchart TD
+    Start(["Tool call"]) --> Try["Execute tool"]
+    Try --> Res{"Result?"}
+    Res -->|"Success"| Done(["Use result ✓"])
+    Res -->|"Transient failure"| Cnt{"Attempts < 3?"}
+    Cnt -->|"Yes — retry"| Wait["Wait briefly"] --> Try
+    Cnt -->|"No — exhausted"| Esc(["Escalate:\nask user or return partial result"])
+    Res -->|"Permanent failure\n(validation / permission)"| Esc
+    style Done fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+    style Esc fill:#2a2818,stroke:#d9a441,color:#e6e8ee
+    style Cnt fill:#252a38,stroke:#3a4058,color:#e6e8ee
+    style Wait fill:#252a38,stroke:#3a4058,color:#e6e8ee
+```
+
 ## Human review workflows
 
 Automated AI pipelines are rarely 100% reliable, and aggregate accuracy numbers can be misleading.
@@ -204,6 +219,17 @@ If your pipeline processes documents and reports "97% accuracy overall," that nu
 When extracting structured data, output a confidence score for each field, not just an overall document score. Calibrate these scores using a labeled validation set: if the model says it's 90% confident, it should be right about 90% of the time.
 
 Use confidence scores to **route review attention**: automatically approve high-confidence fields, route low-confidence or ambiguous extractions to human review. This makes human review time proportional to where the risk actually is, rather than random sampling.
+
+```mermaid
+flowchart TD
+    Extract["Extract field\nwith confidence score"] --> Score{"Confidence\nvs threshold"}
+    Score -->|">= threshold"| Auto["Auto-approve\nskip human review"]
+    Score -->|"< threshold"| Human["Route to\nhuman reviewer"]
+    Score -->|"Conflict or\nambiguous source"| Flag["Flag and annotate\nwith source context"]
+    style Auto fill:#16271c,stroke:#5bbf7a,color:#e6e8ee
+    style Human fill:#2a2818,stroke:#d9a441,color:#e6e8ee
+    style Flag fill:#2a1818,stroke:#e06c6c,color:#e6e8ee
+```
 
 ## Information provenance
 
