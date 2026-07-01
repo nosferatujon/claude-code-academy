@@ -6,9 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm install       # install dependencies (Node 18+ required)
-npm run dev       # dev server at http://localhost:4321
 npm run build     # static build to ./dist
-npm run preview   # serve production build locally
 npm run deploy    # build + push to Cloudflare Pages (requires wrangler auth)
 ```
 

@@ -24,13 +24,12 @@ database, and no server-side code.
 | Tool Design & MCP Integration | 18% |
 | Context Management & Reliability | 15% |
 
-## Local development
+## Build
 
 ```bash
 npm install
-npm run dev      # http://localhost:4321
 npm run build    # outputs static site to ./dist
-npm run preview  # serve the production build locally
+npm run deploy   # build + deploy to Cloudflare Pages
 ```
 
 Requires Node 18+ (built and tested on Node 24).
