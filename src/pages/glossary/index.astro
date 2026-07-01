@@ -28,14 +28,34 @@ const terms = [
       'Everything Claude can "see" at once — its working memory for a conversation. It includes your messages, Claude\'s replies, tool results (like file contents), and the system prompt. It has a fixed size limit measured in tokens; once full, older content is dropped or compacted.',
   },
   {
+    term: 'Escalation',
+    definition:
+      'The pattern of pausing execution and asking a human — or a higher-level orchestrator — for guidance when an agent hits a decision it cannot safely resolve on its own, such as ambiguous requirements, a destructive action, or an unexpected error.',
+  },
+  {
     term: 'Few-shot prompting',
     definition:
       'Providing 2–4 examples of input → expected output in your prompt before asking Claude to handle new input. This teaches Claude a pattern by demonstration rather than by description alone. Three examples is usually enough for the model to learn the rule.',
   },
   {
+    term: 'Harness',
+    definition:
+      'The software runtime that drives the agentic loop — it calls the model, routes tool results back, and enforces hooks. Because hooks execute inside the harness rather than inside Claude, the model cannot observe or bypass them.',
+  },
+  {
+    term: 'Headless mode',
+    definition:
+      'Running Claude Code non-interactively, without a human in the loop, using the <code>-p</code> flag (print mode). Common in CI/CD pipelines: Claude reads a prompt, executes the task, prints output, and exits — rather than waiting for input.',
+  },
+  {
     term: 'Hook',
     definition:
       'A shell command that runs automatically at a specific moment in Claude Code\'s lifecycle — before a tool call, after a tool call, when you submit a message, or when Claude stops responding. Hooks are enforced by the harness (the software running Claude), not by Claude itself, so Claude cannot bypass them.',
+  },
+  {
+    term: 'Lost-in-the-middle effect',
+    definition:
+      'The tendency for models to underweight content buried in the middle of a long input, paying more attention to the very beginning and very end. Place the most critical context at the top or bottom of a prompt to counteract this.',
   },
   {
     term: 'MCP (Model Context Protocol)',
@@ -48,14 +68,39 @@ const terms = [
       'In a multi-agent system, the agent that receives the overall goal, breaks it into sub-tasks, and delegates each one to worker agents. The orchestrator coordinates the work; workers execute their specific piece and return results.',
   },
   {
+    term: 'Permission',
+    definition:
+      'An explicit allow or deny rule for a shell command or tool, configured in <code>.claude/settings.json</code>. Permissions let you pre-approve safe operations (like <code>npm test</code>) so Claude never has to stop and ask, or block operations that should never run automatically.',
+  },
+  {
     term: 'Plan mode',
     definition:
       'A Claude Code mode where Claude researches your task and writes a plan, but makes no file changes until you approve. Enable it with <code>/plan</code>. Useful for risky or large refactors where you want to review the approach first.',
   },
   {
+    term: 'Prompt chaining',
+    definition:
+      'A decomposition strategy where a task is broken into a fixed, pre-planned sequence of steps and each step\'s output feeds directly into the next. Unlike dynamic orchestration, the steps are decided upfront rather than discovered at runtime.',
+  },
+  {
     term: 'Resource',
     definition:
       'In MCP, read-only data that an application loads into the conversation as context — like a file\'s contents or a database record. Unlike tools (which Claude calls when it decides to), resources are controlled by the application or user and loaded before Claude sees them.',
+  },
+  {
+    term: 'Scratchpad',
+    definition:
+      'A file an agent maintains during a long task to record key findings, decisions, and intermediate results. Because compaction can erase specific facts from conversation memory, writing to a scratchpad ensures important details survive the full session.',
+  },
+  {
+    term: 'Session',
+    definition:
+      'A conversation context with a unique ID that persists between invocations. Sessions can be resumed exactly where they left off (<code>--resume</code>) or forked to branch independent lines of work from a shared starting point.',
+  },
+  {
+    term: 'Skill',
+    definition:
+      'A pre-built package of instructions and context that Claude Code loads on demand when invoked via a slash command. Unlike CLAUDE.md — which loads automatically every session — a skill only activates when called, keeping the default context lean.',
   },
   {
     term: 'Slash command',
@@ -68,9 +113,19 @@ const terms = [
       'A field on every Claude API response that tells the loop whether to continue. <code>tool_use</code> means Claude wants to call a tool — keep looping. <code>end_turn</code> means Claude is done — stop. <code>max_tokens</code> means the response was cut off by the token limit.',
   },
   {
+    term: 'Structured output',
+    definition:
+      'Data returned by Claude in a machine-parseable format — typically JSON — rather than prose. Produced by pairing a schema with tool use or an explicit format instruction so downstream code can reliably extract values without parsing free text.',
+  },
+  {
     term: 'Subagent / Worker',
     definition:
       'In a multi-agent system, an agent spawned by an orchestrator to handle a specific sub-task. Each subagent starts with a fresh, empty context window and returns only its result to the orchestrator — keeping the orchestrator\'s context clean.',
+  },
+  {
+    term: 'System prompt',
+    definition:
+      'Instructions passed to Claude at the very start of a session that set its role, constraints, and baseline behavior — before the user says anything. In Claude Code, the harness injects the system prompt automatically; you extend it via CLAUDE.md.',
   },
   {
     term: 'Token',
